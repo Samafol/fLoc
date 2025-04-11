@@ -154,8 +154,25 @@ classdef fLocSession
                     img_ptrs(ii) = 0;
                 else
                     cat_dir = stim_names{ii}(1:find(stim_names{ii} == '-') - 1);
-                    img = imread(fullfile(stim_dir, cat_dir, stim_names{ii}));
-                    img_ptrs(ii) = Screen('MakeTexture', window_ptr, img);
+                    
+                    %img = imread(fullfile(stim_dir, cat_dir, stim_names{ii}));
+                    
+                    %img_ptrs(ii) = Screen('MakeTexture', window_ptr, img);
+                    file_path = fullfile(stim_dir, cat_dir, stim_names{ii});
+
+               if endsWith(file_path, '.mp4')
+                 % Play the video instead of showing an image
+                  Screen('FillRect', window_ptr, bcol);
+                  draw_fixation(window_ptr, center, fcol);
+                  Screen('Flip', window_ptr);
+                  % Simple placeholder for playing videos using Psychtoolbox
+                  play_movie(file_path, stim_dur, window_ptr);
+                  img_ptrs(ii) = 0; % You won’t use textures for videos
+               else
+                      img = imread(file_path);
+                      img_ptrs(ii) = Screen('MakeTexture', window_ptr, img);
+                   end
+
                 end
             end
             % start experiment triggering scanner if applicable

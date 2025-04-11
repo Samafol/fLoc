@@ -15,14 +15,14 @@ classdef fLocSequence
     end
     
     properties (Constant)
-        stim_conds = {'Bodies' 'RealWords' 'Faces' 'Lexical' 'Perceptual'};
+        stim_conds = {'Bodies' 'RealWords' 'Faces' 'Lexical' 'Perceptual', 'videos'};
         stim_per_block = 12;   % number of stimuli in a block
         stim_duty_cycle = 0.5; % duration of stimulus duty cycle (s)
     end
     
     properties (Constant, Hidden)
         % JP
-        stim_set1 = {'body' 'JP_word1' 'adult' 'JP_FF1' 'JP_CB1'};
+        stim_set1 = {'body' 'JP_word1' 'adult' 'JP_FF1' 'JP_CB1' 'video'};
         stim_set2 = {'limb' 'JP_word2' 'child' 'JP_CS1' 'JP_SC1'};
         % EU
         % stim_set1 = {'body' 'JP_word1' 'adult' 'JP_FF1' 'JP_CB1'};
@@ -151,9 +151,23 @@ classdef fLocSequence
                 stim_num_list(cat_idxs) = stim_nums{cc};
             end
             stim_num_list = num2cell(stim_num_list);
-            stim_num_list = cellfun(@(X) ['-' num2str(X) '.jpg'], stim_num_list, 'uni', false);
-            stim_num_list = strrep(stim_num_list, '-0.jpg', '');
-            stim_list = cellfun(@(X, Y) [X Y], stim_cat_list, stim_num_list, 'uni', false);
+            % Assign file extensions based on stimulus category
+            file_ext_list = cell(size(stim_cat_list));
+            for ii = 1:length(stim_cat_list)
+                if strcmp(stim_cat_list{ii}, 'video')
+                    file_ext_list{ii} = '.mp4';
+               else
+                    file_ext_list{ii} = '.jpg';
+               end
+           end
+
+          % Create full filenames like 'video-23.mp4' or 'body-4.jpg'
+          stim_num_str = cellfun(@(X) ['-' num2str(X)], stim_num_list, 'uni', false);
+          stim_list = cellfun(@(X, Y, Z) [X Y Z], stim_cat_list, stim_num_str, file_ext_list, 'uni', false);
+
+            %stim_num_list = cellfun(@(X) ['-' num2str(X) '.jpg'], stim_num_list, 'uni', false);
+            %stim_num_list = strrep(stim_num_list, '-0.jpg', '');
+            %stim_list = cellfun(@(X, Y) [X Y], stim_cat_list, stim_num_list, 'uni', false);
             % insert task probes in randomly-selected stimulus blocks
             probes_per_run = floor(seq.task_freq * seq.num_conds ^ 2);
             if seq.task_num == 2
