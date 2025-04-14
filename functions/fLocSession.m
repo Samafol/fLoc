@@ -122,14 +122,8 @@ classdef fLocSession
                 session.keyboard = laptop_key;
                 session.input = button_key;
             else
-                % session.keyboard = laptop_key;
-                % session.input = laptop_key;
-
-                % Okazaki: from the same usb the response box and the
-                % keyboard is comming, being 5 de trigger of scanner and
-                % 1,2,3,4 the button numbers. Make the input 5                
-                session.keyboard = button_key; %laptop_key; % button_key % ;
-                session.input = button_key;  %laptop_key; %button_key;
+                session.keyboard = laptop_key;
+                session.input = laptop_key;
             end
         end
         
@@ -154,24 +148,23 @@ classdef fLocSession
                     img_ptrs(ii) = 0;
                 else
                     cat_dir = stim_names{ii}(1:find(stim_names{ii} == '-') - 1);
-                    
                     %img = imread(fullfile(stim_dir, cat_dir, stim_names{ii}));
-                    
                     %img_ptrs(ii) = Screen('MakeTexture', window_ptr, img);
-                    file_path = fullfile(stim_dir, cat_dir, stim_names{ii});
+                    [~, ~, ext] = fileparts(stim_names{ii});
+                    full_path = fullfile(stim_dir, cat_dir, stim_names{ii});
 
-               if endsWith(file_path, '.mp4')
-                 % Play the video instead of showing an image
-                  Screen('FillRect', window_ptr, bcol);
-                  draw_fixation(window_ptr, center, fcol);
-                  Screen('Flip', window_ptr);
-                  % Simple placeholder for playing videos using Psychtoolbox
-                  play_movie(file_path, stim_dur, window_ptr);
-                  img_ptrs(ii) = 0; % You won’t use textures for videos
-               else
-                      img = imread(file_path);
-                      img_ptrs(ii) = Screen('MakeTexture', window_ptr, img);
-                   end
+                    if strcmpi(ext, '.mp4') || strcmpi(ext, '.avi')
+                        movie_ptrs(ii) = Screen('OpenMovie', window_ptr, full_path);
+                        img_ptrs(ii) = -1; % placeholder for movie
+
+                    else
+                        img = imread(full_path);
+                        img_ptrs(ii) = Screen('MakeTexture', window_ptr, img);
+                        movie_ptrs(ii) = -1;
+                    end    
+
+
+
 
                 end
             end
@@ -181,7 +174,7 @@ classdef fLocSession
                 Screen('Flip', window_ptr);
                 DrawFormattedText(window_ptr, session.instructions, 'center', 'center', tcol);
                 Screen('Flip', window_ptr);
-                get_key('5', session.keyboard);
+                get_key('g', session.keyboard);
             elseif session.trigger == 1
                 Screen('FillRect', window_ptr, bcol);
                 Screen('Flip', window_ptr);
@@ -218,10 +211,37 @@ classdef fLocSession
                     Screen('FillRect', window_ptr, bcol);
                     draw_fixation(window_ptr, center, fcol);
                 else
-                    Screen('DrawTexture', window_ptr, img_ptrs(ii), [], stim_rect);
-                    draw_fixation(window_ptr, center, fcol);
+                    %Screen('DrawTexture', window_ptr, img_ptrs(ii), [], stim_rect);
+                    %draw_fixation(window_ptr, center, fcol);
+                    if movie_ptrs(ii) ~= -1
+                        Screen('PlayMovie', movie_ptrs(ii), 1); % start movie
+                        % loop until stim_dur is up
+                        movie_start = GetSecs;
+                        while GetSecs - movie_start < stim_dur
+                            tex = Screen('GetMovieImage', window_ptr, movie_ptrs(ii));
+                            if tex > 0
+                                Screen('DrawTexture', window_ptr, tex, [], stim_rect);
+                                draw_fixation(window_ptr, center, fcol);
+                                Screen('Flip', window_ptr);
+                                Screen('Close', tex);
+                            end
+                        end
+                        Screen('PlayMovie', movie_ptrs(ii), 0); % pause
+                        Screen('SetMovieTimeIndex', movie_ptrs(ii), 0); % rewind
+                    else
+                        Screen('DrawTexture', window_ptr, img_ptrs(ii), [], stim_rect);
+                        draw_fixation(window_ptr, center, fcol);
+                        Screen('Flip', window_ptr);
+                        WaitSecs(stim_dur); % ensure timing aligns with stim_dur
+                    end
                 end
-                Screen('Flip', window_ptr);
+                for ii = 1:length(movie_ptrs)
+                     if movie_ptrs(ii) ~= -1
+                         Screen('CloseMovie', movie_ptrs(ii));
+                     end
+                end 
+
+                %Screen('Flip', window_ptr);
                 % collect responses
                 ii_press = []; ii_keys = [];
                 [keys, ie] = record_keys(start_time + (ii - 1) * sdc, stim_dur, k);
@@ -256,10 +276,7 @@ classdef fLocSession
             score_str = [hit_str '\n' fa_str];
             DrawFormattedText(window_ptr, score_str, 'center', 'center', tcol);
             Screen('Flip', window_ptr);
-            % FOR OKAZAKI we will use 4, which is the control box red
-            % button
-            % For rest of places we can maintain 5 as the generic one
-            get_key('4', session.keyboard);
+            get_key('g', session.keyboard);
             ShowCursor;
             Screen('CloseAll');
         end
@@ -311,4 +328,3 @@ classdef fLocSession
     end
     
 end
-
