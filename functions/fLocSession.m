@@ -143,6 +143,7 @@ classdef fLocSession
             center_x = center(1); center_y = center(2); s = session.stim_size / 2;
             stim_rect = [center_x - s center_y - s center_x + s center_y + s];
             img_ptrs = [];
+            movie_ptrs = -1 * ones(1, length(stim_names)); % Initialize with -1 indicating no movies yet
             for ii = 1:length(stim_names)
                 if strcmp(stim_names{ii}, 'baseline')
                     img_ptrs(ii) = 0;
@@ -162,9 +163,6 @@ classdef fLocSession
                         img_ptrs(ii) = Screen('MakeTexture', window_ptr, img);
                         movie_ptrs(ii) = -1;
                     end    
-
-
-
 
                 end
             end
@@ -235,11 +233,7 @@ classdef fLocSession
                         WaitSecs(stim_dur); % ensure timing aligns with stim_dur
                     end
                 end
-                for ii = 1:length(movie_ptrs)
-                     if movie_ptrs(ii) ~= -1
-                         Screen('CloseMovie', movie_ptrs(ii));
-                     end
-                end 
+               
 
                 %Screen('Flip', window_ptr);
                 % collect responses
@@ -257,6 +251,12 @@ classdef fLocSession
                 resp_keys{ii} = ii_keys;
                 resp_press(ii) = min(ii_press);
             end
+            
+            for ii = 1:length(movie_ptrs)
+                     if movie_ptrs(ii) ~= -1
+                         Screen('CloseMovie', movie_ptrs(ii));
+                     end
+            end 
             % store responses
             session.responses(run_num).keys = resp_keys;
             session.responses(run_num).press = resp_press;
@@ -266,11 +266,11 @@ classdef fLocSession
             % analyze response data and display performance
             session = score_task(session, run_num);
             num_probes = num2str(sum(session.sequence.task_probes(:, run_num)));
-            hit_cnt = num2str(session.hit_cnt(run_num));
-            fa_cnt = num2str(session.fa_cnt(run_num));
-            hit_rate = num2str(session.hit_rate(run_num) * 100);
-            hit_str = ['Hits: ' hit_cnt '/' num_probes ' (' hit_rate '%)'];
-            fa_str = ['False alarms: ' fa_cnt];
+            session.hit_cnt = num2str(session.hit_cnt(run_num));
+            session.fa_cnt = num2str(session.fa_cnt(run_num));
+            session.hit_rate = num2str(session.hit_rate(run_num) * 100);
+            hit_str = ['Hits: ' session.hit_cnt '/' num_probes ' (' session.hit_rate '%)'];
+            fa_str = ['False alarms: ' session.fa_cnt];
             Screen('FillRect', window_ptr, bcol);
             Screen('Flip', window_ptr);
             score_str = [hit_str '\n' fa_str];

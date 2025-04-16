@@ -19,7 +19,7 @@ classdef fLocSequence
     end
     
     properties (Constant)
-        stim_conds = {'Bodies' 'RealWords' 'Faces' 'Lexical' 'Perceptual'};
+        stim_conds = {'Bodies' 'RealWords' 'Faces' 'Lexical' 'Perceptual' 'Videos' };
         stim_per_block = 12;   % number of stimuli in a block
         stim_duty_cycle = 0.5; % duration of stimulus duty cycle (s)
     end
@@ -32,7 +32,7 @@ classdef fLocSequence
         % stim_set1 = {'body' 'EU_word1' 'adult' 'EU_FF1' 'EU_CB1'};
         % stim_set2 = {'limb' 'EU_word2' 'child' 'EU_CS1' 'EU_SC1'};
         % ES
-        stim_set1 = {'body' 'ES_word1' 'adult' 'ES_FF1' 'ES_CB1'};
+        stim_set1 = {'body' 'ES_word1' 'adult' 'ES_FF1' 'ES_CB1' 'Videos'};
         stim_set2 = {'limb' 'ES_word2' 'child' 'ES_CS1' 'ES_SC1'};
 
         % stim_set1 = {'body' 'chars' 'adult' 'instrument' 'corridor'};
