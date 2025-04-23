@@ -23,6 +23,4 @@ for i = 1:length(videoFiles)
     Screen('PlayMovie', movie, 0); % Stop
     Screen('CloseMovie', movie);
 end
-sca; % Close all User/experimentaluser/Samuel/Toolboxes/fLoc/test-videos
-
-User/experimentaluser/Samuel/Toolboxes/BCBLViennaSoft/Psychtoolbox-3/Psychtoolbox
+sca; % Close all 
