@@ -150,12 +150,26 @@ classdef fLocSession
             stim_rect = [center_x - s center_y - s center_x + s center_y + s];
             img_ptrs = [];
             for ii = 1:length(stim_names)
-                if strcmp(stim_names{ii}, 'baseline')
+                if contains(stim_names{ii}, 'baseline')
+                %if strcmp(stim_names{ii}, 'baseline')
                     img_ptrs(ii) = 0;
                 else
                     cat_dir = stim_names{ii}(1:find(stim_names{ii} == '-') - 1);
-                    img = imread(fullfile(stim_dir, cat_dir, stim_names{ii}));
-                    img_ptrs(ii) = Screen('MakeTexture', window_ptr, img);
+                    full_path = fullfile(stim_dir, cat_dir, stim_names{ii});
+                    [~, ~, ext] = fileparts(stim_names{ii});
+                    if ismember(lower(ext), {'.jpg', '.jpeg', '.png', '.bmp', '.tif', '.tiff'})
+                         img = imread(full_path);
+                         img_ptrs(ii) = Screen('MakeTexture', window_ptr, img);
+                    elseif strcmpi(ext, '.mp4')
+                        % Skip loading here — handle videos later after all images are shown
+                         img_ptrs(ii) = -1;  % Flag as video
+                    else
+                        warning('Unsupported stimulus type: %s', stim_names{ii});
+                        img_ptrs(ii) = 0;
+                    end     
+
+                    %img = imread(fullfile(stim_dir, cat_dir, stim_names{ii}));
+                    %img_ptrs(ii) = Screen('MakeTexture', window_ptr, img);
                 end
             end
             % start experiment triggering scanner if applicable
@@ -197,13 +211,20 @@ classdef fLocSession
             start_time = GetSecs;
             for ii = 1:length(stim_names)
                 % display blank screen if baseline and image if stimulus
-                if strcmp(stim_names{ii}, 'baseline')
+                if contains(stim_names{ii}, 'baseline')
+                %if strcmp(stim_names{ii}, 'baseline')
                     Screen('FillRect', window_ptr, bcol);
                     draw_fixation(window_ptr, center, fcol);
+                elseif img_ptrs(ii) == -1
+                    % It's a video file — skip here; will be played after images
+                    Screen('FillRect', window_ptr, bcol);
+                    draw_fixation(window_ptr, center, fcol); 
+      
                 else
                     Screen('DrawTexture', window_ptr, img_ptrs(ii), [], stim_rect);
                     draw_fixation(window_ptr, center, fcol);
                 end
+
                 Screen('Flip', window_ptr);
                 % collect responses
                 ii_press = []; ii_keys = [];
@@ -234,17 +255,72 @@ classdef fLocSession
             hit_rate = num2str(session.hit_rate(run_num) * 100);
             hit_str = ['Hits: ' hit_cnt '/' num_probes ' (' hit_rate '%)'];
             fa_str = ['False alarms: ' fa_cnt];
+            %Screen('FillRect', window_ptr, bcol);
+            %Screen('Flip', window_ptr);
+            %score_str = [hit_str '\n' fa_str];
+            %DrawFormattedText(window_ptr, score_str, 'center', 'center', tcol);
+            %Screen('Flip', window_ptr);
+            % FOR OKAZAKI we will use 4, which is the control box red
+            % button
+            % For rest of places we can maintain 5 as the generic one
+            %get_key('4', session.keyboard);
+            %ShowCursor;
+            %Screen('CloseAll');
+
+            % Close textures after all images are shown
+            %Screen('Close'); % Close screen but keep window
+            for i = 1:length(img_ptrs)
+                 if img_ptrs(i) > 0
+                      Screen('Close', img_ptrs(i));
+                 end 
+            end
+            % Now display videos
+            videoDir = fullfile(session.exp_dir, 'stimuli', 'Processed_Videos');
+            videoFiles = dir(fullfile(videoDir, '*.mp4'));
+
+            if isempty(videoFiles)
+                warning('No .mp4 video files found in: %s', videoDir);
+            else
+                for i = 1:length(videoFiles)
+                    videoPath = fullfile(videoDir, videoFiles(i).name);
+                    disp(['Now playing: ', videoFiles(i).name]);
+
+                    if ~exist(videoPath, 'file')
+                        warning('File does not exist: %s', videoPath);
+                        continue;
+                    end
+
+                    [movie, ~, fps, duration, width, height] = Screen('OpenMovie', window_ptr, videoPath);
+                    Screen('PlayMovie', movie, 1);
+
+                    % Show video for 2 seconds or until key press
+                    tStart = GetSecs;
+                    while ~KbCheck && GetSecs - tStart < 2
+                        tex = Screen('GetMovieImage', window_ptr, movie);
+                        if tex <= 0
+                            break;
+                        end
+                        Screen('DrawTexture', window_ptr, tex);
+                        Screen('Flip', window_ptr);
+                        Screen('Close', tex);
+                    end
+
+                    % Stop and clean up movie
+                    Screen('PlayMovie', movie, 0);
+                    Screen('CloseMovie', movie);
+                end
+            end
+            % Now display final performance screen
             Screen('FillRect', window_ptr, bcol);
             Screen('Flip', window_ptr);
             score_str = [hit_str '\n' fa_str];
             DrawFormattedText(window_ptr, score_str, 'center', 'center', tcol);
             Screen('Flip', window_ptr);
-            % FOR OKAZAKI we will use 4, which is the control box red
-            % button
-            % For rest of places we can maintain 5 as the generic one
             get_key('4', session.keyboard);
             ShowCursor;
             Screen('CloseAll');
+
+
         end
         
         % quantify performance in stimulus task
@@ -271,11 +347,17 @@ classdef fLocSession
             session.parfiles = cell(1, session.num_runs);
             % list of conditions and plotting colors
             conds = ['Baseline' session.sequence.stim_conds];
-            cols = {[1 1 1] [0 0 1] [0 0 0] [1 0 0] [.8 .8 0] [0 1 0]};
+            cols = {[1 1 1] [0 0 1] [0 0 0] [1 0 0] [.8 .8 0] [0 1 0] [0.5 0.5 0.5]};
             % write information about each block on a separate line
+            
+    
             for rr = 1:session.num_runs
                 block_onsets = session.sequence.block_onsets(:, rr);
                 block_conds = session.sequence.block_conds(:, rr);
+                if max(block_conds + 1) > length(cols)
+                    error('block_conds index exceeds number of defined condition colors.');
+                end
+                
                 cond_names = conds(block_conds + 1);
                 cond_cols = cols(block_conds + 1);
                 fname = [session.id '_fLoc_run' num2str(rr) '.par'];

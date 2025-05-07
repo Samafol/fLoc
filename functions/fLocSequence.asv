@@ -157,17 +157,22 @@ classdef fLocSequence
             file_exts(is_video) = {'.mp4'};
             %stim_num_list = num2cell(stim_num_list);  % Fix: convert numeric array to cell array
             %stim_num_list = cellfun(@(X, ext) ['-' num2str(X) ext], stim_num_list, file_exts, 'uni', false);
-
             stim_num_list = num2cell(stim_num_list);  % still convert to cell array
             stim_num_list_fixed = cell(size(stim_cat_list));
-            for i = 1:length(stim_cat_list)
-                  if strcmpi(stim_cat_list{i}, 'baseline')
-                      stim_num_list_fixed{i} = '.jpg';  % no suffix for baseline
-                  else
-                         stim_num_list_fixed{i} = ['-' num2str(stim_num_list{i}) file_exts{i}];
-                  end
-            end
-            stim_num_list = stim_num_list_fixed;
+            
+
+
+
+
+    if strcmpi(stim_cat_list{i}, 'baseline')
+        stim_num_list_fixed{i} = '';  % no suffix for baseline
+    else
+        stim_num_list_fixed{i} = ['-' num2str(stim_num_list{i}) file_exts{i}];
+    end
+end
+
+stim_num_list = stim_num_list_fixed;
+
 
 
             %this is the area I editted
