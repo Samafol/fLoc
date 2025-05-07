@@ -105,16 +105,39 @@ classdef fLocSequence
                 case 1
                     run_sets = repmat(seq.stim_set1, seq.num_runs, 1);
                 case 2
-                    run_sets = repmat(seq.stim_set2, seqProcessed_Videos.num_runs, 1);
+                    run_sets = repmat(seq.stim_set2, seq.num_runs, 1);
+                        
                 case 3
                     run_sets = [seq.stim_set1; seq.stim_set2];
                     cat_iters = ceil(seq.num_runs / 2);
                     run_sets = repmat(run_sets, cat_iters, 1);
-                    run_sets = run_sets(1:seq.num_runs, :);
+                    run_sets = run_sets(1:seq.num_runs, :);  % this line was broken before              
+                            
                 otherwise
                     error('Invalid stim_set argument.');
             end
-        end
+        end 
+            
+    
+
+        %function run_sets = get.run_sets(seq)
+            %switch seq.stim_set
+                %case 1
+                    %run_sets = repmat(seq.stim_set1, seq.num_runs, 1);
+                %case 2
+                    %run_sets = repmat(seq.stim_set2, seqProcessed_Videos.num_runs, 1);
+                %case 3
+                    %run_sets = [seq.stim_set1; seq.stim_set2];
+                    %cat_iters = ceil(seq.num_runs / 2);
+                    %run_sets = repmat(run_sets, cat_iters, 1);
+                    %run_sets = run_sets(1:seq.num_runs,            else
+                %oddball_nums = num2cell(randi(seq.stim_per_set, probes_per_run * seq.num_runs, 1));
+                %probe_stim_names = cellfun(@(X) ['scrambled-' num2str(X) '.jpg'], oddball_nums, 'uni', false);
+            %end :);
+                %otherwise
+                    %error('Invalid stim_set argument.');
+            %end
+        %end
         
         % generate randomized stimulus sequences and insert task probes
         function seq = make_runs(seq)
@@ -168,7 +191,7 @@ classdef fLocSequence
                   end
             end
             stim_num_list = stim_num_list_fixed;
-
+            %.mp4'
 
             %this is the area I editted
             %stim_num_list = num2cell(stim_num_list);
