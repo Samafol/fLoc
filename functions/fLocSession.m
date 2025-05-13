@@ -43,6 +43,7 @@ classdef fLocSession
         instructions % task-specific instructions for participant
     end
     
+    
     methods
         
         % class constructor
@@ -68,7 +69,7 @@ classdef fLocSession
             session.hit_cnt = zeros(1, session.num_runs);
             session.fa_cnt = zeros(1, session.num_runs);
         end
-        
+        %sequence
         % get session-specific id string
         function id = get.id(session)
             par_str = [session.name '_' session.date];
@@ -118,7 +119,7 @@ classdef fLocSession
         function session = find_inputs(session)
             laptop_key = get_keyboard_num;
             button_key = laptop_key; %get_box_num;
-            if session.trigger == 1 && button_key ~= 0
+            if session.trigger == 1 && buttsequenceon_key ~= 0
                 session.keyboard = laptop_key;
                 session.input = button_key;
             else
@@ -141,6 +142,7 @@ classdef fLocSession
             stim_dur = session.sequence.stim_dur;
             isi_dur = session.sequence.isi_dur;
             stim_names = session.sequence.stim_names(:, run_num);
+            %stim_names = stim_names(randperm(length(stim_names)));
             stim_dir = fullfile(session.exp_dir, 'stimuli');
             tcol = session.text_color; bcol = session.blank_color; fcol = session.fix_color;
             resp_keys = {}; resp_press = zeros(length(stim_names), 1);
@@ -215,23 +217,85 @@ classdef fLocSession
                 %if strcmp(stim_names{ii}, 'baseline')
                     Screen('FillRect', window_ptr, bcol);
                     draw_fixation(window_ptr, center, fcol);
+                    Screen('Flip', window_ptr);
+                
                 elseif img_ptrs(ii) == -1
+                    % This is a video stimulus: play the movie inline
+            
+                    stim_name = stim_names{ii};
+                 
+                    moviePath = fullfile(session.exp_dir, 'stimuli', 'Processed_Videos', stim_name);
+   
+                    try
+                        moviePtr = Screen('OpenMovie', window_ptr, moviePath);
+                         Screen('PlayMovie', moviePtr, 1);
+
+                         movieStart = GetSecs;
+                         while GetSecs - movieStart < stim_dur
+                             tex = Screen('GetMovieImage', window_ptr, moviePtr);
+                              if tex <= 0
+                                  break;
+                              end
+                              Screen('DrawTexture', window_ptr, tex, [], stim_rect);
+                              draw_fixation(window_ptr, center, fcol);
+                              Screen('Flip', window_ptr);
+                              Screen('Close', tex);
+                         end
+                         Screen('PlayMovie', moviePtr, 0);
+                         Screen('CloseMovie', moviePtr);
+
+                    catch ME
+                        disp(['Error playing video: ', stim_name]);
+                        disp(getReport(ME));
+                        % Only try to draw if window_ptr is still open
+                        %open_windows = Screen('Windows');
+                        if is_valid_window(window_ptr)
+                            try
+                                Screen('FillRect', window_ptr, session.blank_color);
+                                draw_fixation(window_ptr, center, session.fix_color);
+                                Screen('Flip', window_ptr);
+                            catch innerME
+                                disp('Could not draw fallback fixation screen.');
+                                disp(getReport(innerME));
+                            end
+                        else
+                            disp('window_ptr is invalid. Skipping fallback screen drawing.');
+                        end
+                        WaitSecs(stim_dur);  % fallback wait regardless
+                    end
+ 
+                    %catch ME 
+                         %disp(['Error playing video: ', stim_name]);
+                         %disp(getReport(ME));
+                         %if Screen('Windows')
+                             %Screen('FillRect', window_ptr, session.blank_color);
+                             %draw_fixation(window_ptr, center, fcol);
+                             %Screen('Flip', window_ptr);
+                         %end 
+                         %WaitSecs(stim_dur);  % fallback wait
+                        
+                    %end
+                %end
+
+                %elseif img_ptrs(ii) == -1
                     % It's a video file — skip here; will be played after images
-                    Screen('FillRect', window_ptr, bcol);
-                    draw_fixation(window_ptr, center, fcol); 
+                    %Screen('FillRect', window_ptr, bcol);
+                    %draw_fixation(window_ptr, center, fcol); 
       
                 else
                     Screen('DrawTexture', window_ptr, img_ptrs(ii), [], stim_rect);
                     draw_fixation(window_ptr, center, fcol);
+                    Screen('Flip', window_ptr);
                 end
 
-                Screen('Flip', window_ptr);
+                
                 % collect responses
                 ii_press = []; ii_keys = [];
                 [keys, ie] = record_keys(start_time + (ii - 1) * sdc, stim_dur, k);
                 ii_keys = [ii_keys keys]; ii_press = [ii_press ie];
                 % display ISI if necessary
                 if isi_dur > 0
+
                     Screen('FillRect', window_ptr, bcol);
                     draw_fixation(window_ptr, center, fcol);
                     [keys, ie] = record_keys(start_time + (ii - 1) * sdc + stim_dur, isi_dur, k);
@@ -275,41 +339,41 @@ classdef fLocSession
                  end 
             end
             % Now display videos
-            videoDir = fullfile(session.exp_dir, 'stimuli', 'Processed_Videos');
-            videoFiles = dir(fullfile(videoDir, '*.mp4'));
+            %videoDir = fullfile(session.exp_dir, 'stimuli', 'Processed_Videos');
+            %videoFiles = dir(fullfile(videoDir, '*.mp4'));
 
-            if isempty(videoFiles)
-                warning('No .mp4 video files found in: %s', videoDir);
-            else
-                for i = 1:length(videoFiles)
-                    videoPath = fullfile(videoDir, videoFiles(i).name);
-                    disp(['Now playing: ', videoFiles(i).name]);
+            %if isempty(videoFiles)
+                %warning('No .mp4 video files found in: %s', videoDir);
+            %else
+                %for i = 1:length(videoFiles)
+                    %videoPath = fullfile(videoDir, videoFiles(i).name);
+                    %disp(['Now playing: ', videoFiles(i).name]);
 
-                    if ~exist(videoPath, 'file')
-                        warning('File does not exist: %s', videoPath);
-                        continue;
-                    end
+                    %if ~exist(videoPath, 'file')
+                        %warning('File does not exist: %s', videoPath);
+                        %continue;
+                    %end
 
-                    [movie, ~, fps, duration, width, height] = Screen('OpenMovie', window_ptr, videoPath);
-                    Screen('PlayMovie', movie, 1);
+                    %[movie, ~, fps, duration, width, height] = Screen('OpenMovie', window_ptr, videoPath);
+                    %Screen('PlayMovie', movie, 1);
 
                     % Show video for 2 seconds or until key press
-                    tStart = GetSecs;
-                    while ~KbCheck && GetSecs - tStart < 2
-                        tex = Screen('GetMovieImage', window_ptr, movie);
-                        if tex <= 0
-                            break;
-                        end
-                        Screen('DrawTexture', window_ptr, tex);
-                        Screen('Flip', window_ptr);
-                        Screen('Close', tex);
-                    end
+                    %tStart = GetSecs;
+                    %while ~KbCheck && GetSecs - tStart < 2
+                        %tex = Screen('GetMovieImage', window_ptr, movie);
+                        %if tex <= 0
+                            %break;
+                        %end
+                        %Screen('DrawTexture', window_ptr, tex);
+                        %Screen('Flip', window_ptr);
+                        %Screen('Close', tex);
+                    %end
 
                     % Stop and clean up movie
-                    Screen('PlayMovie', movie, 0);
-                    Screen('CloseMovie', movie);
-                end
-            end
+                    %Screen('PlayMovie', movie, 0);
+                    %Screen('CloseMovie', movie);
+                %end
+            %end
             % Now display final performance screen
             Screen('FillRect', window_ptr, bcol);
             Screen('Flip', window_ptr);

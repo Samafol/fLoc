@@ -35,7 +35,21 @@ runme('okazaki_multisite_20240130_TM_B', 0, 3, 6,1);  scanner B
 TK was always scanned with lights on.
 A couple of times scanner B was stopped with reconstruction errors, we
 restarted the functional in the correct scanner option and that was it.
- There where a couple of times that the scan was started but the log or not
+ There where a couple of tiwindow_ptr is invalid. Skipping fallback screen drawing.
+Error in function FillRect: 	Invalid Window (or Texture) Index provided: It doesn't correspond to an open window or texture.
+Did you close it accidentally via Screen('Close') or Screen('CloseAll') ?
+Error using Screen
+Usage:
+
+Screen('FillRect', windowPtr [,color] [,rect]
+)
+
+Error in fLocSession/run_exp (line 293)
+                    Screen('FillRect', window_ptr, bcol);
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Error in runme (line 208)
+    session = run_exp(session, rr);
+              ^^^^^^^^^^^^^^^^^^^^mes that the scan was started but the log or not
  or whatever. They will have less amount of scans, so not convert and
  that's it. The rest seems to be ok. 
 
