@@ -13,6 +13,13 @@ Inputs (optional):
   6) start_run -- run number to begin with (if sequence is interrupted)
 
 Run fLocMINI using this command: 
+runme('testgari01', 0, 1, 2, 1);  % scanner B
+runme('ss01',0, 1, 1, 1)
+runme('ss01',0, 1, 2, 2)
+
+
+
+
 runme('okazaki_pilot_01_initials, 0, 3, 4, 1, start_run) % Edit if interrupted
 
 
@@ -108,7 +115,7 @@ Takemura-san
 runme('okazaki_multisite_20240205_TH-JP_B', 0, 3, 6,1);  scanner B
 
 Lerma-san
-runme('okazaki_multisite_20240205_GL-EU_B', 0, 3, 6,1);  scanner B
+runme('okazaki_multisite_20240205_GL-EU_B', 0p4, 3, 6,1);  scanner B
 
 20240206
 Takemura-san
@@ -130,7 +137,7 @@ TAMAGAWA
 runme('tamagawa_multisite_20240221_-JP', 0, 3, 6,1);
 runme('tamagawa_multisite_20240221_-JP', 0, 3, 6,1);
 runme('tamagawa_multisite_20240221_-JP', 0, 3, 6,1);
-
+p4
 20240222
 --------
 runme('tamagawa_multisite_20240222_-JP', 0, 3, 6,1);
@@ -208,6 +215,8 @@ end
 % setup fLocSession and save session information
 session = fLocSession(name, trigger, stim_set, num_runs, task_num);
 session = load_seqs(session);
+%session.seq = make_runs(session.seq);  % <== This is the fix
+
 session_dir = (fullfile(session.exp_dir, 'data', session.id));
 if ~exist(session_dir, 'dir') == 7
     mkdir(session_dir);
