@@ -13,7 +13,7 @@ classdef fLocSession
     properties (Hidden)
         stim_set  % stimulus set/s (1 = standard, 2 = alternate, 3 = both)
         task_num  % task number (1 = 1-back, 2 = 2-back, 3 = oddball)
-        input     % device number of input used for resonse collection
+        input     % device number of input used for response collection
         keyboard  % device number of native computer keyboard
         hit_cnt   % number of hits per run
         fa_cnt    % number of false alarms per run
@@ -125,9 +125,8 @@ classdef fLocSession
             else
                 % session.keyboard = laptop_key;
                 % session.input = laptop_key;
-
                 % Okazaki: from the same usb the response box and the
-                % keyboard is comming, being 5 de trigger of scanner and
+                % keyboard is coming, being 5 de trigger of scanner and
                 % 1,2,3,4 the button numbers. Make the input 5                
                 session.keyboard = button_key; %laptop_key; % button_key % ;
                 session.input = button_key;  %laptop_key; %button_key;
@@ -169,9 +168,7 @@ classdef fLocSession
                         warning('Unsupported stimulus type: %s', stim_names{ii});
                         img_ptrs(ii) = 0;
                     end     
-
-                    %img = imread(fullfile(stim_dir, cat_dir, stim_names{ii}));
-                    %img_ptrs(ii) = Screen('MakeTexture', window_ptr, img);
+                  
                 end
             end
             % start experiment triggering scanner if applicable
@@ -229,7 +226,6 @@ classdef fLocSession
                     try
                         moviePtr = Screen('OpenMovie', window_ptr, moviePath);
                          Screen('PlayMovie', moviePtr, 1);
-
                          movieStart = GetSecs;
                          while GetSecs - movieStart < stim_dur
                              tex = Screen('GetMovieImage', window_ptr, moviePtr);
@@ -243,7 +239,6 @@ classdef fLocSession
                          end
                          Screen('PlayMovie', moviePtr, 0);
                          Screen('CloseMovie', moviePtr);
-
                     catch ME
                         disp(['Error playing video: ', stim_name]);
                         disp(getReport(ME));
@@ -263,31 +258,12 @@ classdef fLocSession
                         end
                         WaitSecs(stim_dur);  % fallback wait regardless
                     end
- 
-                    %catch ME 
-                         %disp(['Error playing video: ', stim_name]);
-                         %disp(getReport(ME));
-                         %if Screen('Windows')
-                             %Screen('FillRect', window_ptr, session.blank_color);
-                             %draw_fixation(window_ptr, center, fcol);
-                             %Screen('Flip', window_ptr);
-                         %end 
-                         %WaitSecs(stim_dur);  % fallback wait
-                        
-                    %end
-                %end
 
-                %elseif img_ptrs(ii) == -1
-                    % It's a video file — skip here; will be played after images
-                    %Screen('FillRect', window_ptr, bcol);
-                    %draw_fixation(window_ptr, center, fcol); 
-      
                 else
                     Screen('DrawTexture', window_ptr, img_ptrs(ii), [], stim_rect);
                     draw_fixation(window_ptr, center, fcol);
                     Screen('Flip', window_ptr);
                 end
-
                 
                 % collect responses
                 ii_press = []; ii_keys = [];
@@ -295,7 +271,6 @@ classdef fLocSession
                 ii_keys = [ii_keys keys]; ii_press = [ii_press ie];
                 % display ISI if necessary
                 if isi_dur > 0
-
                     Screen('FillRect', window_ptr, bcol);
                     draw_fixation(window_ptr, center, fcol);
                     [keys, ie] = record_keys(start_time + (ii - 1) * sdc + stim_dur, isi_dur, k);
@@ -330,7 +305,6 @@ classdef fLocSession
             %get_key('4', session.keyboard);
             %ShowCursor;
             %Screen('CloseAll');
-
             % Close textures after all images are shown
             %Screen('Close'); % Close screen but keep window
             for i = 1:length(img_ptrs)
@@ -338,42 +312,7 @@ classdef fLocSession
                       Screen('Close', img_ptrs(i));
                  end 
             end
-            % Now display videos
-            %videoDir = fullfile(session.exp_dir, 'stimuli', 'Processed_Videos');
-            %videoFiles = dir(fullfile(videoDir, '*.mp4'));
-
-            %if isempty(videoFiles)
-                %warning('No .mp4 video files found in: %s', videoDir);
-            %else
-                %for i = 1:length(videoFiles)
-                    %videoPath = fullfile(videoDir, videoFiles(i).name);
-                    %disp(['Now playing: ', videoFiles(i).name]);
-
-                    %if ~exist(videoPath, 'file')
-                        %warning('File does not exist: %s', videoPath);
-                        %continue;
-                    %end
-
-                    %[movie, ~, fps, duration, width, height] = Screen('OpenMovie', window_ptr, videoPath);
-                    %Screen('PlayMovie', movie, 1);
-
-                    % Show video for 2 seconds or until key press
-                    %tStart = GetSecs;
-                    %while ~KbCheck && GetSecs - tStart < 2
-                        %tex = Screen('GetMovieImage', window_ptr, movie);
-                        %if tex <= 0
-                            %break;
-                        %end
-                        %Screen('DrawTexture', window_ptr, tex);
-                        %Screen('Flip', window_ptr);
-                        %Screen('Close', tex);
-                    %end
-
-                    % Stop and clean up movie
-                    %Screen('PlayMovie', movie, 0);
-                    %Screen('CloseMovie', movie);
-                %end
-            %end
+            
             % Now display final performance screen
             Screen('FillRect', window_ptr, bcol);
             Screen('Flip', window_ptr);
@@ -383,8 +322,6 @@ classdef fLocSession
             get_key('4', session.keyboard);
             ShowCursor;
             Screen('CloseAll');
-
-
         end
         
         % quantify performance in stimulus task

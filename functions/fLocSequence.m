@@ -1,9 +1,9 @@
-classdef fLocSequence
+   classdef fLocSequence
     
     properties
         num_runs    % number of runs in experiment
         stim_onsets % onset times of each stimulus in a run
-        stim_names  % sequence of stimulus filenames
+        stim_names  % sequence of stimulus file names
         task_probes % index of stimuli that are task probes
     end
     
@@ -16,7 +16,7 @@ classdef fLocSequence
     
     properties (Constant)
         stim_conds = {'Bodies' 'RealWords' 'Faces' 'Lexical' 'Perceptual' 'Videos'};
-        stim_per_block = 12;   % number of stimuli in a block
+        stim_per_block = 12;   % stimuli per block
         stim_duty_cycle = 0.5; % duration of stimulus duty cycle (s)
     end
     
@@ -117,27 +117,6 @@ classdef fLocSequence
                     error('Invalid stim_set argument.');
             end
         end 
-            
-    
-
-        %function run_sets = get.run_sets(seq)
-            %switch seq.stim_set
-                %case 1
-                    %run_sets = repmat(seq.stim_set1, seq.num_runs, 1);
-                %case 2
-                    %run_sets = repmat(seq.stim_set2, seqProcessed_Videos.num_runs, 1);
-                %case 3
-                    %run_sets = [seq.stim_set1; seq.stim_set2];
-                    %cat_iters = ceil(seq.num_runs / 2);
-                    %run_sets = repmat(run_sets, cat_iters, 1);
-                    %run_sets = run_sets(1:seq.num_runs,            else
-                %oddball_nums = num2cell(randi(seq.stim_per_set, probes_per_run * seq.num_runs, 1));
-                %probe_stim_names = cellfun(@(X) ['scrambled-' num2str(X) '.jpg'], oddball_nums, 'uni', false);
-            %end :);
-                %otherwise
-                    %error('Invalid stim_set argument.');
-            %end
-        %end
         
         % generate randomized stimulus sequences and insert task probes
         function seq = make_runs(seq)
@@ -159,9 +138,11 @@ classdef fLocSequence
             block_conds = make_orders(seq.num_conds, seq.num_conds, seq.num_runs);
             block_conds = [zeros(1, seq.num_runs); block_conds; zeros(1, seq.num_runs)];
             block_dur = seq.stim_per_block * seq.stim_duty_cycle;
+            %block_dur = zeros(size(block_conds));
             block_onsets = repmat(0:block_dur:seq.run_dur - block_dur, seq.num_runs, 1)';
             % generate sequence of stimulus filenames for each run
             stim_mat = cell(seq.stim_per_block, seq.num_conds ^ 2 + 2, seq.num_runs);
+            
             for rr = 1:seq.num_runs
                 cat_list = ['baseline' seq.run_sets(rr, :)];
                 cat_seq = cat_list(block_conds(:, rr) + 1);
@@ -174,13 +155,9 @@ classdef fLocSequence
                 stim_num_list(cat_idxs) = stim_nums{cc};
             end
             
-
             is_video = contains(stim_cat_list, 'Video', 'IgnoreCase', true); % case-insensitive match
             file_exts = repmat({'.jpg'}, size(stim_cat_list));
             file_exts(is_video) = {'.mp4'};
-            %stim_num_list = num2cell(stim_num_list);  % Fix: convert numeric array to cell array
-            %stim_num_list = cellfun(@(X, ext) ['-' num2str(X) ext], stim_num_list, file_exts, 'uni', false);
-
             stim_num_list = num2cell(stim_num_list);  % still convert to cell array
             stim_num_list_fixed = cell(size(stim_cat_list));
             for i = 1:length(stim_cat_list)
@@ -191,14 +168,8 @@ classdef fLocSequence
                   end
             end
             stim_num_list = stim_num_list_fixed;
-            %.mp4'
-
-            %this is the area I editted
-            %stim_num_list = num2cell(stim_num_list);
-            %stim_num_list = cellfun(@(X) ['-' num2str(X) '.jpg'], stim_num_list, 'uni', false);
-            %stim_num_list = strrep(stim_num_list, '-0.jpg', '');
+            
             stim_list = cellfun(@(X, Y) [X Y], stim_cat_list, stim_num_list, 'uni', false);
-
             % insert task probes in randomly-selected stimulus blocks
             probes_per_run = floor(seq.task_freq * seq.num_conds ^ 2);
             if seq.task_num == 2
@@ -239,4 +210,3 @@ classdef fLocSequence
     end
     
 end
-

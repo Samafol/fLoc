@@ -13,7 +13,7 @@ classdef fLocSession
     properties (Hidden)
         stim_set  % stimulus set/s (1 = standard, 2 = alternate, 3 = both)
         task_num  % task number (1 = 1-back, 2 = 2-back, 3 = oddball)
-        input     % device number of input used for resonse collection
+        input     % device number of input used for response collection
         keyboard  % device number of native computer keyboard
         hit_cnt   % number of hits per run
         fa_cnt    % number of false alarms per run
@@ -43,6 +43,7 @@ classdef fLocSession
         instructions % task-specific instructions for participant
     end
     
+    
     methods
         
         % class constructor
@@ -68,7 +69,7 @@ classdef fLocSession
             session.hit_cnt = zeros(1, session.num_runs);
             session.fa_cnt = zeros(1, session.num_runs);
         end
-        sequence
+        %sequence
         % get session-specific id string
         function id = get.id(session)
             par_str = [session.name '_' session.date];
@@ -124,9 +125,8 @@ classdef fLocSession
             else
                 % session.keyboard = laptop_key;
                 % session.input = laptop_key;
-
                 % Okazaki: from the same usb the response box and the
-                % keyboard is comming, being 5 de trigger of scanner and
+                % keyboard is coming, being 5 de trigger of scanner and
                 % 1,2,3,4 the button numbers. Make the input 5                
                 session.keyboard = button_key; %laptop_key; % button_key % ;
                 session.input = button_key;  %laptop_key; %button_key;
@@ -140,9 +140,93 @@ classdef fLocSession
             sdc = session.sequence.stim_duty_cycle;
             stim_dur = session.sequence.stim_dur;
             isi_dur = session.sequence.isi_dur;
+
             stim_names = session.sequence.stim_names(:, run_num);
+            stim_dir = fullfile(session.exp_dir, 'stimuli');
+            stim_dir = fullfile(session.exp_dir, 'stimuli');
+            stim_names = cellstr(stim_names);
+
+            % Initialize containers
+            category_map = containers.Map;
+
+            % Group stimuli by category (e.g., 'catA-file1.jpg' → 'catA')
+            for i = 1:length(stim_names)
+                name = stim_names{i};
+                if contains(name, '-') && (endsWith(name, '.mp4') || endsWith(name, '.jpg'))
+                    split_idx = strfind(name, '-');
+                    category = name(1:split_idx(1)-1); % e.g., 'catA' from 'catA-file1.jpg'
+                    
+
+                    if ~isKey(category_map, category)
+                        category_map(category) = struct('images', [], 'videos', []);
+                    end
+                    if endsWith(name, '.mp4')
+                        category_map(category).videos{end+1} = name;
+                    elseif endsWith(name, '.jpg')
+                        category_map(category).images{end+1} = name;
+                    end
+                end
+            end
+
+            % Select 6 videos + 12 images from each category (if available)
+            final_stim_names = {};
+            categories = keys(category_map);
+            for c = 1:length(categories)
+                cat_data = category_map(categories{c});
+
+                % Shuffle and sample images
+                imgs = cat_data.images;
+                if ~isempty(imgs)
+                    imgs = imgs(randperm(length(imgs)));
+                    imgs = imgs(1:min(12, length(imgs)));
+                end
+
+                % Shuffle and sample videos
+                vids = cat_data.videos;
+                if ~isempty(vids)
+                    vids = vids(randperm(length(vids)));
+                    vids = vids(1:min(6, length(vids)));
+                end
+
+                % Append to final list
+                final_stim_names = [final_stim_names, imgs, vids];
+            end
+
+            % Shuffle all selected stimuli
+            final_stim_names = final_stim_names(randperm(length(final_stim_names)));
+
+            % Assign to stim_names for downstream use
+            stim_names = final_stim_names(:);
+
+
+
+
+%{   
+            
             %stim_names = stim_names(randperm(length(stim_names)));
             stim_dir = fullfile(session.exp_dir, 'stimuli');
+            %% Convert to a cell array of strings (if not already)
+            stim_names = cellstr(stim_names);
+
+            % Find indices of video and image files
+            video_idx = find(endsWith(stim_names, '.mp4'));
+            image_idx = find(endsWith(stim_names, '.jpg'));
+
+            % Randomly shuffle and select 6 videos
+            video_idx = video_idx(randperm(length(video_idx)));
+            selected_video_idx = video_idx(1:min(6, length(video_idx)));
+
+            % Randomly shuffle and select 12 images
+            image_idx = image_idx(randperm(length(image_idx)));
+            selected_image_idx = image_idx(1:min(12, length(image_idx)));
+
+            % Combine and shuffle selected indices to randomize order
+            selected_idx = [selected_video_idx; selected_image_idx];
+            selected_idx = selected_idx(randperm(length(selected_idx)));
+
+            stim_names = stim_names(selected_idx);
+%}
+
             tcol = session.text_color; bcol = session.blank_color; fcol = session.fix_color;
             resp_keys = {}; resp_press = zeros(length(stim_names), 1);
             % setup screen and load all stimuli in run
@@ -155,9 +239,20 @@ classdef fLocSession
                 %if strcmp(stim_names{ii}, 'baseline')
                     img_ptrs(ii) = 0;
                 else
+                    %[cat_dir, file_name, ext] = fileparts(stim_names{ii});
+                    %full_path = fullfile(stim_dir, cat_dir, [file_name ext]);
+    
                     cat_dir = stim_names{ii}(1:find(stim_names{ii} == '-') - 1);
-                    full_path = fullfile(stim_dir, cat_dir, stim_names{ii});
+                    full_path = fullfile(stim_dir,cat_dir, stim_names{ii});
+                    %full_path = fullfile(stim_dir, stim_names{ii});
+
+                    %if isempty(stim_names{ii})
+                        %img_ptrs(ii) = 0;
+                        %continue;
+                    %end
+
                     [~, ~, ext] = fileparts(stim_names{ii});
+
                     if ismember(lower(ext), {'.jpg', '.jpeg', '.png', '.bmp', '.tif', '.tiff'})
                          img = imread(full_path);
                          img_ptrs(ii) = Screen('MakeTexture', window_ptr, img);
@@ -168,7 +263,6 @@ classdef fLocSession
                         warning('Unsupported stimulus type: %s', stim_names{ii});
                         img_ptrs(ii) = 0;
                     end     
-
                     %img = imread(fullfile(stim_dir, cat_dir, stim_names{ii}));
                     %img_ptrs(ii) = Screen('MakeTexture', window_ptr, img);
                 end
@@ -222,12 +316,12 @@ classdef fLocSession
                     % This is a video stimulus: play the movie inline
             
                     stim_name = stim_names{ii};
+                 
                     moviePath = fullfile(session.exp_dir, 'stimuli', 'Processed_Videos', stim_name);
    
                     try
                         moviePtr = Screen('OpenMovie', window_ptr, moviePath);
                          Screen('PlayMovie', moviePtr, 1);
-
                          movieStart = GetSecs;
                          while GetSecs - movieStart < stim_dur
                              tex = Screen('GetMovieImage', window_ptr, moviePtr);
@@ -241,7 +335,6 @@ classdef fLocSession
                          end
                          Screen('PlayMovie', moviePtr, 0);
                          Screen('CloseMovie', moviePtr);
-
                     catch ME
                         disp(['Error playing video: ', stim_name]);
                         disp(getReport(ME));
@@ -274,7 +367,6 @@ classdef fLocSession
                         
                     %end
                 %end
-
                 %elseif img_ptrs(ii) == -1
                     % It's a video file — skip here; will be played after images
                     %Screen('FillRect', window_ptr, bcol);
@@ -285,7 +377,6 @@ classdef fLocSession
                     draw_fixation(window_ptr, center, fcol);
                     Screen('Flip', window_ptr);
                 end
-
                 
                 % collect responses
                 ii_press = []; ii_keys = [];
@@ -293,7 +384,6 @@ classdef fLocSession
                 ii_keys = [ii_keys keys]; ii_press = [ii_press ie];
                 % display ISI if necessary
                 if isi_dur > 0
-
                     Screen('FillRect', window_ptr, bcol);
                     draw_fixation(window_ptr, center, fcol);
                     [keys, ie] = record_keys(start_time + (ii - 1) * sdc + stim_dur, isi_dur, k);
@@ -328,7 +418,6 @@ classdef fLocSession
             %get_key('4', session.keyboard);
             %ShowCursor;
             %Screen('CloseAll');
-
             % Close textures after all images are shown
             %Screen('Close'); % Close screen but keep window
             for i = 1:length(img_ptrs)
@@ -336,42 +425,7 @@ classdef fLocSession
                       Screen('Close', img_ptrs(i));
                  end 
             end
-            % Now display videos
-            %videoDir = fullfile(session.exp_dir, 'stimuli', 'Processed_Videos');
-            %videoFiles = dir(fullfile(videoDir, '*.mp4'));
-
-            %if isempty(videoFiles)
-                %warning('No .mp4 video files found in: %s', videoDir);
-            %else
-                %for i = 1:length(videoFiles)
-                    %videoPath = fullfile(videoDir, videoFiles(i).name);
-                    %disp(['Now playing: ', videoFiles(i).name]);
-
-                    %if ~exist(videoPath, 'file')
-                        %warning('File does not exist: %s', videoPath);
-                        %continue;
-                    %end
-
-                    %[movie, ~, fps, duration, width, height] = Screen('OpenMovie', window_ptr, videoPath);
-                    %Screen('PlayMovie', movie, 1);
-
-                    % Show video for 2 seconds or until key press
-                    %tStart = GetSecs;
-                    %while ~KbCheck && GetSecs - tStart < 2
-                        %tex = Screen('GetMovieImage', window_ptr, movie);
-                        %if tex <= 0
-                            %break;
-                        %end
-                        %Screen('DrawTexture', window_ptr, tex);
-                        %Screen('Flip', window_ptr);
-                        %Screen('Close', tex);
-                    %end
-
-                    % Stop and clean up movie
-                    %Screen('PlayMovie', movie, 0);
-                    %Screen('CloseMovie', movie);
-                %end
-            %end
+            
             % Now display final performance screen
             Screen('FillRect', window_ptr, bcol);
             Screen('Flip', window_ptr);
@@ -381,11 +435,41 @@ classdef fLocSession
             get_key('4', session.keyboard);
             ShowCursor;
             Screen('CloseAll');
-
-
         end
         
         % quantify performance in stimulus task
+         
+        function session = score_task(session, run_num)
+            sdc = session.sequence.stim_duty_cycle;
+            fpw = session.wait_dur / sdc;
+
+            % Get response time windows for task probes
+            resp_presses = session.responses(run_num).press;
+            resp_correct = session.sequence.task_probes(:, run_num);
+            probe_idxs = find(resp_correct);
+
+            hit_windows = zeros(size(resp_correct));
+           
+            for ww = 1:ceil(fpw)
+                idx = probe_idxs + ww - 1;
+                idx = idx(idx <= length(hit_windows));  % limit to valid indices
+                hit_windows(idx) = 1;
+            end
+
+            % Ensure hit_windows and resp_presses are same length
+            min_len = min(length(hit_windows), length(resp_presses));
+            hit_resp_windows = resp_presses(1:min_len);
+            hit_windows = hit_windows(1:min_len);
+
+            hit_resp_windows = hit_resp_windows(hit_windows == 1);
+            fa_resp_windows = resp_presses(hit_windows == 0);
+
+            % Count hits and false alarms
+            session.hit_cnt(run_num) = sum(max(reshape(hit_resp_windows, ceil(fpw), [])));
+            session.fa_cnt(run_num) = sum(fa_resp_windows);
+        end
+
+%{  
         function session = score_task(session, run_num)
             sdc = session.sequence.stim_duty_cycle;
             fpw = session.wait_dur / sdc;
@@ -394,6 +478,7 @@ classdef fLocSession
             resp_correct = session.sequence.task_probes(:, run_num);
             probe_idxs = find(resp_correct);
             hit_windows = zeros(size(resp_correct));
+            
             for ww = 1:ceil(fpw)
                 hit_windows(probe_idxs + ww - 1) = 1;
             end
@@ -403,6 +488,8 @@ classdef fLocSession
             session.hit_cnt(run_num) = sum(max(reshape(hit_resp_windows, fpw, [])));
             session.fa_cnt(run_num) = sum(fa_resp_windows);
         end
+%}
+
         
         % write vistasoft-compatible parfile for each run
         function session = write_parfiles(session)
@@ -438,4 +525,13 @@ classdef fLocSession
     end
     
 end
+
+
+
+
+
+
+
+
+
 
