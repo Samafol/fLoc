@@ -108,6 +108,12 @@ classdef fLocSession
                 seq = fLocSequence(session.stim_set, session.num_runs, session.task_num);
                 seq = make_runs(seq);
                 mkdir(fileparts(fpath));
+                % EDIT seq HERE, so that the videos are 6
+                video_folder = fullfile(session.exp_dir, 'Stimuli', 'Processed_Videos');
+                if ~isfolder(video_folder); error('Video folder cannot be found'); end
+                all_video_lengths = measure_video_length(video_folder);
+                if isempty(all_video_lengths); error('Could not get video lengths, check code'); end
+                seq = edit_videos(seq, all_video_lengths);
                 save(fpath, 'seq', '-v7.3');
             else
                 load(fpath);

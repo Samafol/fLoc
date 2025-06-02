@@ -13,7 +13,7 @@ Inputs (optional):
   6) start_run -- run number to begin with (if sequence is interrupted)
 
 Run fLocMINI using this command: 
-runme('testgari01', 0, 1, 2, 1);  % scanner B
+runme('testgari03', 0, 1, 2, 1)
 runme('ss01',0, 1, 1, 1)
 runme('ss01',0, 1, 2, 2)
 

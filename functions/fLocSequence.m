@@ -23,7 +23,7 @@
     properties (Constant, Hidden)
         % JP
         stim_set1 = {'body' 'JP_word1' 'adult' 'JP_FF1' 'JP_CB1' 'Processed_Videos'};
-        stim_set2 = {'limb' 'JP_word2' 'child' 'JP_CS1' 'JP_SC1'};
+        stim_set2 = {'limb' 'JP_word2' 'child' 'JP_CS1' 'JP_SC1' 'Processed_Videos'};
         % EU
         % stim_set1 = {'body' 'JP_word1' 'adult' 'JP_FF1' 'JP_CB1'};
         % stim_set2 = {'limb' 'JP_word2' 'child' 'JP_CS1' 'JP_SC1'};
@@ -85,7 +85,7 @@
             if seq.task_num == 3
                 isi_dur = 0;
             else
-                isi_dur = 0.2;
+                isi_dur = 0.1;
             end
         end
         
