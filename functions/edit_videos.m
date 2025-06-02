@@ -3,6 +3,12 @@ function seq = edit_videos(seq, all_video_lengths)
 %   Edit seq so that calculates video sequence and onsets
 
     % Detect the video onsets and stimuli to go from 12 to 6
+    how_many_stims = size(seq.stim_names,1);
+    how_many_videos = length(find(~cellfun(@isempty, strfind(seq.stim_names(:,1), 'Video'))));
+    new_how_many_videos = how_many_stims - how_many_videos/2;
+    new_stim_names = cell([new_how_many_videos, seq.num_runs]);
+    new_stim_onsets = double(zeros([new_how_many_videos, seq.num_runs]));
+    new_task_probes = double(zeros([new_how_many_videos, seq.num_runs]));
     for rr=1:seq.num_runs
         stim_names = seq.stim_names(:,rr);
         stim_onsets = seq.stim_onsets(:,rr);
@@ -54,11 +60,12 @@ function seq = edit_videos(seq, all_video_lengths)
         % Now remove the one without update
         stim_onsets(all_video_ind_to_remove) = [];
         % Add to the seq
-        seq.stim_names(:,rr) = stim_names;
-        seq.stim_onsets(:,rr) = stim_onsets;
-        seq.task_probes(:,rr) = task_probes;
+        new_stim_names(:,rr) = stim_names;
+        new_stim_onsets(:,rr) = stim_onsets;
+        new_task_probes(:,rr) = task_probes;
 
     end
-
-
+    seq.stim_names = new_stim_names;
+    seq.stim_onsets = new_stim_onsets;
+    seq.task_probes = new_task_probes;
 end
