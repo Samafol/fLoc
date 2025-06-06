@@ -66,16 +66,11 @@ Screen('BlendFunction', params.display.windowPtr, GL_SRC_ALPHA, GL_ONE_MINUS_SRC
 % hide cursor
 %HideCursor;
 
-
-
-
-
-
-
-
 %end
 
+%Use the function below to 
 
+%{
 function [w, center] = doScreen
     % Avoid sync test failure during development
     Screen('Preference', 'SkipSyncTests', 1);
@@ -100,6 +95,7 @@ function [w, center] = doScreen
     % Hide mouse
     HideCursor;
 end
+%}
 
 % use the function below for the stimuli display on VGA screen at the MRI
 % room

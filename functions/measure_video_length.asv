@@ -3,7 +3,7 @@ function videoData = measure_video_length(folderPath)
 %   Detailed explanation goes here
 
     % Get list of MP4 files
-    mp4Files = dir(fullfile(folderPath, '*.mp4'));
+    5mp4Files = dir(fullfile(folderPath, '*.mp4'));
     
     % Check if any files were found
     if isempty(mp4Files)

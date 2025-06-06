@@ -1,4 +1,4 @@
-classdef fLocSequence
+  classdef fLocSequence
     
     properties
         num_runs    % number of runs in experiment
@@ -14,18 +14,16 @@ classdef fLocSequence
         block_conds  % block conditions labels
     end
     
-    properties %(Constant)
+    properties (Constant)
         stim_conds = {'Bodies' 'RealWords' 'Faces' 'Lexical' 'Perceptual' 'Videos'};
-    end
-    properties (Dependent)
-        stim_per_block  %= 12;   % stimuli per block
-        stim_duty_cycle  %= 0.5; % duration of stimulus duty cycle (s)
+        stim_per_block = 12;   % stimuli per block
+        stim_duty_cycle = 0.5; % duration of stimulus duty cycle (s)
     end
     
     properties (Constant, Hidden)
         % JP
         stim_set1 = {'body' 'JP_word1' 'adult' 'JP_FF1' 'JP_CB1' 'Processed_Videos'};
-        stim_set2 = {'limb' 'JP_word2' 'child' 'JP_CS1' 'JP_SC1'};
+        stim_set2 = {'limb' 'JP_word2' 'child' 'JP_CS1' 'JP_SC1' 'Processed_Videos'};
         % EU
         % stim_set1 = {'body' 'JP_word1' 'adult' 'JP_FF1' 'JP_CB1'};
         % stim_set2 = {'limb' 'JP_word2' 'child' 'JP_CS1' 'JP_SC1'};
@@ -68,23 +66,7 @@ classdef fLocSequence
             else
                 seq.task_num = task_num;
             end
-        end
-        function stim_per_block = get.stim_per_block(seq)
-            if strcmpi(seq.task_name, 'oddball') && any(strcmpi(seq.stim_conds, 'Videos'))
-            if strcmpi(category, 'Video', 'IgnoreCase', true)
-                stim_per_block = 6;
-            else
-                stim_per_block = 12;
-            end
-        end
-
-        function stim_duty_cycle = get.stim_duty_cycle(seq)
-            if strcmpi(seq.task_name, 'oddball') && any(strcmpi(seq.stim_conds, 'Videos'))
-            if contains(category, 'Video', 'IgnoreCase', true)
-                stim_duty_cycle = 1.0;
-            else
-                stim_duty_cycle = 0.5;
-            end
+            
         end
         
         % get name of task
@@ -94,9 +76,9 @@ classdef fLocSequence
         
         % get run duration given stimulus duty cycle
         function run_dur = get.run_dur(seq)
-            block_dur = seq.stim_per_block * seq.stim_duty_cycle;
-            blocks_per_run = 1 + (1 + length(seq.stim_conds)) ^ 2 + 1;
-            run_dur = block_dur * blocks_per_run;
+            block_dur = seq.stim_per_block * seq.stim_duty_cycle; % 6
+            blocks_per_run = 1 + (1 + length(seq.stim_conds)) ^ 2 + 1; % 51
+            run_dur = block_dur * blocks_per_run; %306
         end
         
         % get ISI duration given task
@@ -104,13 +86,13 @@ classdef fLocSequence
             if seq.task_num == 3
                 isi_dur = 0;
             else
-                isi_dur = 0.2;
+                isi_dur = 0.1;
             end
         end
         
         % get stimulus duration given ISI
         function stim_dur = get.stim_dur(seq)
-            stim_dur = seq.stim_duty_cycle - seq.isi_dur;
+            stim_dur = seq.stim_duty_cycle - seq.isi_dur; % either 0.5 or 0.4 depending on seq.task_num
         end
         
         % get number of experimental conditions including baseline
@@ -135,8 +117,7 @@ classdef fLocSequence
                 otherwise
                     error('Invalid stim_set argument.');
             end
-        end
-        
+        end 
         
         % generate randomized stimulus sequences and insert task probes
         function seq = make_runs(seq)
@@ -231,8 +212,4 @@ classdef fLocSequence
     
 end
 
-
-
-
-
-   
+	

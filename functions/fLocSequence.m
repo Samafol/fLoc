@@ -1,4 +1,4 @@
-   classdef fLocSequence
+  classdef fLocSequence
     
     properties
         num_runs    % number of runs in experiment
@@ -66,6 +66,7 @@
             else
                 seq.task_num = task_num;
             end
+            
         end
         
         % get name of task
@@ -75,9 +76,9 @@
         
         % get run duration given stimulus duty cycle
         function run_dur = get.run_dur(seq)
-            block_dur = seq.stim_per_block * seq.stim_duty_cycle;
-            blocks_per_run = 1 + (1 + length(seq.stim_conds)) ^ 2 + 1;
-            run_dur = block_dur * blocks_per_run;
+            block_dur = seq.stim_per_block * seq.stim_duty_cycle; % 6
+            blocks_per_run = 1 + (1 + length(seq.stim_conds)) ^ 2 + 1; % 51
+            run_dur = block_dur * blocks_per_run; %306
         end
         
         % get ISI duration given task
@@ -91,7 +92,7 @@
         
         % get stimulus duration given ISI
         function stim_dur = get.stim_dur(seq)
-            stim_dur = seq.stim_duty_cycle - seq.isi_dur;
+            stim_dur = seq.stim_duty_cycle - seq.isi_dur; % either 0.5 or 0.4 depending on seq.task_num
         end
         
         % get number of experimental conditions including baseline
@@ -210,3 +211,5 @@
     end
     
 end
+
+	

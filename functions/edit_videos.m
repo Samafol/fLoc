@@ -9,6 +9,8 @@ function seq = edit_videos(seq, all_video_lengths)
     new_stim_names = cell([new_how_many_videos, seq.num_runs]);
     new_stim_onsets = double(zeros([new_how_many_videos, seq.num_runs]));
     new_task_probes = double(zeros([new_how_many_videos, seq.num_runs]));
+    new_stim_duty_cycle = double(zeros([new_how_many_videos, seq.num_runs]));
+
     for rr=1:seq.num_runs
         stim_names = seq.stim_names(:,rr);
         stim_onsets = seq.stim_onsets(:,rr);
@@ -59,13 +61,25 @@ function seq = edit_videos(seq, all_video_lengths)
         stim_onsets(all_video_ind_to_keep+1) = stim_onsets(all_video_ind_to_keep) + all_video_length_to_keep + new_isis;
         % Now remove the one without update
         stim_onsets(all_video_ind_to_remove) = [];
+
+        % Set stim_duty_cycle (0.5 for images, actual duration for kept videos) ---
+        stim_duty_cycle = zeros(size(stim_names));
+        stim_duty_cycle(:) = 0.5;  % Default for images
+        stim_duty_cycle(all_video_ind_to_keep) = all_video_length_to_keep;
+        stim_duty_cycle(all_video_ind_to_remove) = [];  % Trim dropped videos
+
+
+
+
         % Add to the seq
         new_stim_names(:,rr) = stim_names;
         new_stim_onsets(:,rr) = stim_onsets;
         new_task_probes(:,rr) = task_probes;
+        new_stim_duty_cycle(:,rr) = stim_duty_cycle;
 
     end
     seq.stim_names = new_stim_names;
     seq.stim_onsets = new_stim_onsets;
     seq.task_probes = new_task_probes;
+    seq.stim_duty_cycle = new_stim_duty_cycle;
 end

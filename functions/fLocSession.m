@@ -8,6 +8,7 @@ classdef fLocSession
         sequence  % session fLocSequence object
         responses % behavioral response data structure
         parfiles  % paths to vistasoft-compatible parfiles
+        videoData % Table containing Filename and Duration_Secs
     end
     
     properties (Hidden)
@@ -103,14 +104,38 @@ classdef fLocSession
         function session = load_seqs(session)
             fname = [session.id '_fLocSequence.mat'];
             fpath = fullfile(session.exp_dir, 'data', session.id, fname);
+             % Prepare videoData per session
+             if isempty(session.videoData)
+                 video_folder = fullfile(session.exp_dir, 'stimuli', 'Processed_Videos');
+                 if ~isfolder(video_folder)
+                     error('Video folder not found at: %s', video_folder);
+                 end
+
+                 session.videoData = measure_video_length(video_folder); % <- This stores the video data
+                 if isempty(session.videoData)
+                     error('Video duration table is empty. Check video files.');
+                 end
+             end
+
+            % Load video durations once
+            %videoFolder = fullfile(stimulusDir, 'videos'); % or however you store video paths
+            %videoData = measure_video_length(videoFolder);
+            %obj.videoData = videoData; % Save to the class for later use
+
             % make stimulus sequences if not already defined for session
             if ~exist(fpath, 'file')
                 seq = fLocSequence(session.stim_set, session.num_runs, session.task_num);
                 seq = make_runs(seq);
+                seq = edit_videos(seq, session.videoData);
+
                 mkdir(fileparts(fpath));
                 % EDIT seq HERE, so that the videos are 6
-                video_folder = fullfile(session.exp_dir, 'Stimuli', 'Processed_Videos');
-                if ~isfolder(video_folder); error('Video folder cannot be found'); end
+                video_folder = fullfile(session.exp_dir, 'stimuli', 'Processed_Videos');
+                %disp(['Looking for video folder at: ' video_folder]);
+                if ~isfolder(video_folder)
+                    session.videoData = measure_video_length(video_folder);
+                    error('Video folder cannot be found'); 
+                end
                 all_video_lengths = measure_video_length(video_folder);
                 if isempty(all_video_lengths); error('Could not get video lengths, check code'); end
                 seq = edit_videos(seq, all_video_lengths);

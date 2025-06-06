@@ -8,6 +8,7 @@ classdef fLocSession
         sequence  % session fLocSequence object
         responses % behavioral response data structure
         parfiles  % paths to vistasoft-compatible parfiles
+        videoData % Table containing Filename and Duration_Secs
     end
     
     properties (Hidden)
@@ -103,11 +104,39 @@ classdef fLocSession
         function session = load_seqs(session)
             fname = [session.id '_fLocSequence.mat'];
             fpath = fullfile(session.exp_dir, 'data', session.id, fname);
+             % Prepare videoData only once per session
+             if isempty(session.videoData)
+                 video_folder = fullfile(session.exp_dir, 'stimuli', 'Processed_Videos');
+                 if ~isfolder(video_folder)
+                     error('Video folder not found at: %s', video_folder);
+                 end
+
+                 session.videoData = measure_video_length(video_folder); % <- This stores the video data
+                 if isempty(session.videoData)
+                     error('Video duration table is empty. Check video files.');
+                 end
+             end
+
+            % Load video durations once
+            %videoFolder = fullfile(stimulusDir, 'videos'); % or however you store video paths
+            %videoData = measure_video_length(videoFolder);
+            %obj.videoData = videoData; % Save to the class for later use
+
             % make stimulus sequences if not already defined for session
             if ~exist(fpath, 'file')
                 seq = fLocSequence(session.stim_set, session.num_runs, session.task_num);
                 seq = make_runs(seq);
+                seq = edit_videos(seq, session.videoData);
+
                 mkdir(fileparts(fpath));
+                % EDIT seq HERE, so that the videos are 6
+                video_folder = fullfile(session.exp_dir, 'stimuli', 'Processed_Videos');
+                %disp(['Looking for video folder at: ' video_folder]);
+                if ~isfolder(video_folder); error('Video folder cannot be found'); 
+                end
+                all_video_lengths = measure_video_length(video_folder);
+                if isempty(all_video_lengths); error('Could not get video lengths, check code'); end
+                seq = edit_videos(seq, all_video_lengths);
                 save(fpath, 'seq', '-v7.3');
             else
                 load(fpath);
@@ -140,93 +169,9 @@ classdef fLocSession
             sdc = session.sequence.stim_duty_cycle;
             stim_dur = session.sequence.stim_dur;
             isi_dur = session.sequence.isi_dur;
-
             stim_names = session.sequence.stim_names(:, run_num);
-            stim_dir = fullfile(session.exp_dir, 'stimuli');
-            stim_dir = fullfile(session.exp_dir, 'stimuli');
-            stim_names = cellstr(stim_names);
-
-            % Initialize containers
-            category_map = containers.Map;
-
-            % Group stimuli by category (e.g., 'catA-file1.jpg' → 'catA')
-            for i = 1:length(stim_names)
-                name = stim_names{i};
-                if contains(name, '-') && (endsWith(name, '.mp4') || endsWith(name, '.jpg'))
-                    split_idx = strfind(name, '-');
-                    category = name(1:split_idx(1)-1); % e.g., 'catA' from 'catA-file1.jpg'
-                    
-
-                    if ~isKey(category_map, category)
-                        category_map(category) = struct('images', [], 'videos', []);
-                    end
-                    if endsWith(name, '.mp4')
-                        category_map(category).videos{end+1} = name;
-                    elseif endsWith(name, '.jpg')
-                        category_map(category).images{end+1} = name;
-                    end
-                end
-            end
-
-            % Select 6 videos + 12 images from each category (if available)
-            final_stim_names = {};
-            categories = keys(category_map);
-            for c = 1:length(categories)
-                cat_data = category_map(categories{c});
-
-                % Shuffle and sample images
-                imgs = cat_data.images;
-                if ~isempty(imgs)
-                    imgs = imgs(randperm(length(imgs)));
-                    imgs = imgs(1:min(12, length(imgs)));
-                end
-
-                % Shuffle and sample videos
-                vids = cat_data.videos;
-                if ~isempty(vids)
-                    vids = vids(randperm(length(vids)));
-                    vids = vids(1:min(6, length(vids)));
-                end
-
-                % Append to final list
-                final_stim_names = [final_stim_names, imgs, vids];
-            end
-
-            % Shuffle all selected stimuli
-            final_stim_names = final_stim_names(randperm(length(final_stim_names)));
-
-            % Assign to stim_names for downstream use
-            stim_names = final_stim_names(:);
-
-
-
-
-%{   
-            
             %stim_names = stim_names(randperm(length(stim_names)));
             stim_dir = fullfile(session.exp_dir, 'stimuli');
-            %% Convert to a cell array of strings (if not already)
-            stim_names = cellstr(stim_names);
-
-            % Find indices of video and image files
-            video_idx = find(endsWith(stim_names, '.mp4'));
-            image_idx = find(endsWith(stim_names, '.jpg'));
-
-            % Randomly shuffle and select 6 videos
-            video_idx = video_idx(randperm(length(video_idx)));
-            selected_video_idx = video_idx(1:min(6, length(video_idx)));
-
-            % Randomly shuffle and select 12 images
-            image_idx = image_idx(randperm(length(image_idx)));
-            selected_image_idx = image_idx(1:min(12, length(image_idx)));
-
-            % Combine and shuffle selected indices to randomize order
-            selected_idx = [selected_video_idx; selected_image_idx];
-            selected_idx = selected_idx(randperm(length(selected_idx)));
-
-            stim_names = stim_names(selected_idx);
-%}
-
             tcol = session.text_color; bcol = session.blank_color; fcol = session.fix_color;
             resp_keys = {}; resp_press = zeros(length(stim_names), 1);
             % setup screen and load all stimuli in run
@@ -239,20 +184,9 @@ classdef fLocSession
                 %if strcmp(stim_names{ii}, 'baseline')
                     img_ptrs(ii) = 0;
                 else
-                    %[cat_dir, file_name, ext] = fileparts(stim_names{ii});
-                    %full_path = fullfile(stim_dir, cat_dir, [file_name ext]);
-    
                     cat_dir = stim_names{ii}(1:find(stim_names{ii} == '-') - 1);
-                    full_path = fullfile(stim_dir,cat_dir, stim_names{ii});
-                    %full_path = fullfile(stim_dir, stim_names{ii});
-
-                    %if isempty(stim_names{ii})
-                        %img_ptrs(ii) = 0;
-                        %continue;
-                    %end
-
+                    full_path = fullfile(stim_dir, cat_dir, stim_names{ii});
                     [~, ~, ext] = fileparts(stim_names{ii});
-
                     if ismember(lower(ext), {'.jpg', '.jpeg', '.png', '.bmp', '.tif', '.tiff'})
                          img = imread(full_path);
                          img_ptrs(ii) = Screen('MakeTexture', window_ptr, img);
@@ -263,8 +197,7 @@ classdef fLocSession
                         warning('Unsupported stimulus type: %s', stim_names{ii});
                         img_ptrs(ii) = 0;
                     end     
-                    %img = imread(fullfile(stim_dir, cat_dir, stim_names{ii}));
-                    %img_ptrs(ii) = Screen('MakeTexture', window_ptr, img);
+                  
                 end
             end
             % start experiment triggering scanner if applicable
@@ -354,24 +287,7 @@ classdef fLocSession
                         end
                         WaitSecs(stim_dur);  % fallback wait regardless
                     end
- 
-                    %catch ME 
-                         %disp(['Error playing video: ', stim_name]);
-                         %disp(getReport(ME));
-                         %if Screen('Windows')
-                             %Screen('FillRect', window_ptr, session.blank_color);
-                             %draw_fixation(window_ptr, center, fcol);
-                             %Screen('Flip', window_ptr);
-                         %end 
-                         %WaitSecs(stim_dur);  % fallback wait
-                        
-                    %end
-                %end
-                %elseif img_ptrs(ii) == -1
-                    % It's a video file — skip here; will be played after images
-                    %Screen('FillRect', window_ptr, bcol);
-                    %draw_fixation(window_ptr, center, fcol); 
-      
+
                 else
                     Screen('DrawTexture', window_ptr, img_ptrs(ii), [], stim_rect);
                     draw_fixation(window_ptr, center, fcol);
@@ -438,38 +354,6 @@ classdef fLocSession
         end
         
         % quantify performance in stimulus task
-         
-        function session = score_task(session, run_num)
-            sdc = session.sequence.stim_duty_cycle;
-            fpw = session.wait_dur / sdc;
-
-            % Get response time windows for task probes
-            resp_presses = session.responses(run_num).press;
-            resp_correct = session.sequence.task_probes(:, run_num);
-            probe_idxs = find(resp_correct);
-
-            hit_windows = zeros(size(resp_correct));
-           
-            for ww = 1:ceil(fpw)
-                idx = probe_idxs + ww - 1;
-                idx = idx(idx <= length(hit_windows));  % limit to valid indices
-                hit_windows(idx) = 1;
-            end
-
-            % Ensure hit_windows and resp_presses are same length
-            min_len = min(length(hit_windows), length(resp_presses));
-            hit_resp_windows = resp_presses(1:min_len);
-            hit_windows = hit_windows(1:min_len);
-
-            hit_resp_windows = hit_resp_windows(hit_windows == 1);
-            fa_resp_windows = resp_presses(hit_windows == 0);
-
-            % Count hits and false alarms
-            session.hit_cnt(run_num) = sum(max(reshape(hit_resp_windows, ceil(fpw), [])));
-            session.fa_cnt(run_num) = sum(fa_resp_windows);
-        end
-
-%{  
         function session = score_task(session, run_num)
             sdc = session.sequence.stim_duty_cycle;
             fpw = session.wait_dur / sdc;
@@ -478,7 +362,6 @@ classdef fLocSession
             resp_correct = session.sequence.task_probes(:, run_num);
             probe_idxs = find(resp_correct);
             hit_windows = zeros(size(resp_correct));
-            
             for ww = 1:ceil(fpw)
                 hit_windows(probe_idxs + ww - 1) = 1;
             end
@@ -488,8 +371,6 @@ classdef fLocSession
             session.hit_cnt(run_num) = sum(max(reshape(hit_resp_windows, fpw, [])));
             session.fa_cnt(run_num) = sum(fa_resp_windows);
         end
-%}
-
         
         % write vistasoft-compatible parfile for each run
         function session = write_parfiles(session)
@@ -525,13 +406,4 @@ classdef fLocSession
     end
     
 end
-
-
-
-
-
-
-
-
-
 
