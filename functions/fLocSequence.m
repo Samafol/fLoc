@@ -1,10 +1,12 @@
-  classdef fLocSequence
+ classdef fLocSequence
     
     properties
         num_runs    % number of runs in experiment
         stim_onsets % onset times of each stimulus in a run
         stim_names  % sequence of stimulus file names
         task_probes % index of stimuli that are task probes
+        all_video_lengths % lengths of the videos
+        video_isis % calculated isi-s for videos so that all sums 6 secs
     end
     
     properties (Hidden)
@@ -66,7 +68,6 @@
             else
                 seq.task_num = task_num;
             end
-            
         end
         
         % get name of task
@@ -76,9 +77,9 @@
         
         % get run duration given stimulus duty cycle
         function run_dur = get.run_dur(seq)
-            block_dur = seq.stim_per_block * seq.stim_duty_cycle; % 6
-            blocks_per_run = 1 + (1 + length(seq.stim_conds)) ^ 2 + 1; % 51
-            run_dur = block_dur * blocks_per_run; %306
+            block_dur = seq.stim_per_block * seq.stim_duty_cycle;
+            blocks_per_run = 1 + (1 + length(seq.stim_conds)) ^ 2 + 1;
+            run_dur = block_dur * blocks_per_run;
         end
         
         % get ISI duration given task
@@ -92,7 +93,7 @@
         
         % get stimulus duration given ISI
         function stim_dur = get.stim_dur(seq)
-            stim_dur = seq.stim_duty_cycle - seq.isi_dur; % either 0.5 or 0.4 depending on seq.task_num
+            stim_dur = seq.stim_duty_cycle - seq.isi_dur;
         end
         
         % get number of experimental conditions including baseline
@@ -200,16 +201,20 @@
             stim_names = reshape(stim_list', [], seq.num_runs);
             stim_onsets = repmat(0:seq.stim_duty_cycle:seq.run_dur - seq.stim_duty_cycle, seq.num_runs, 1)';
             task_probes = reshape(probe_stim_mat, [], seq.num_runs);
+            flRP = pwd;
+            video_folder = fullfile(flRP, 'stimuli', 'Processed_Videos');
+            if ~isfolder(video_folder); error('Video folder cannot be found'); end
+            all_video_lengths = measure_video_length(video_folder);
             % store stimulus sequence parameters
             seq.block_onsets = block_onsets;
             seq.block_conds = block_conds;
             seq.stim_onsets = stim_onsets;
             seq.stim_names = stim_names;
             seq.task_probes = task_probes;
+            seq.all_video_lengths = all_video_lengths;
+            seq.video_isis = zeros(size(stim_onsets));
         end
                 
     end
     
 end
-
-	

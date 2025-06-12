@@ -8,7 +8,6 @@ classdef fLocSession
         sequence  % session fLocSequence object
         responses % behavioral response data structure
         parfiles  % paths to vistasoft-compatible parfiles
-        videoData % Table containing Filename and Duration_Secs
     end
     
     properties (Hidden)
@@ -104,41 +103,14 @@ classdef fLocSession
         function session = load_seqs(session)
             fname = [session.id '_fLocSequence.mat'];
             fpath = fullfile(session.exp_dir, 'data', session.id, fname);
-             % Prepare videoData per session
-             if isempty(session.videoData)
-                 video_folder = fullfile(session.exp_dir, 'stimuli', 'Processed_Videos');
-                 if ~isfolder(video_folder)
-                     error('Video folder not found at: %s', video_folder);
-                 end
-
-                 session.videoData = measure_video_length(video_folder); % <- This stores the video data
-                 if isempty(session.videoData)
-                     error('Video duration table is empty. Check video files.');
-                 end
-             end
-
-            % Load video durations once
-            %videoFolder = fullfile(stimulusDir, 'videos'); % or however you store video paths
-            %videoData = measure_video_length(videoFolder);
-            %obj.videoData = videoData; % Save to the class for later use
-
             % make stimulus sequences if not already defined for session
             if ~exist(fpath, 'file')
                 seq = fLocSequence(session.stim_set, session.num_runs, session.task_num);
                 seq = make_runs(seq);
-                seq = edit_videos(seq, session.videoData);
-
                 mkdir(fileparts(fpath));
                 % EDIT seq HERE, so that the videos are 6
-                video_folder = fullfile(session.exp_dir, 'stimuli', 'Processed_Videos');
-                %disp(['Looking for video folder at: ' video_folder]);
-                if ~isfolder(video_folder)
-                    session.videoData = measure_video_length(video_folder);
-                    error('Video folder cannot be found'); 
-                end
-                all_video_lengths = measure_video_length(video_folder);
-                if isempty(all_video_lengths); error('Could not get video lengths, check code'); end
-                seq = edit_videos(seq, all_video_lengths);
+                if isempty(seq.all_video_lengths); error('Could not get video lengths, check code'); end
+                seq = edit_videos(seq);
                 save(fpath, 'seq', '-v7.3');
             else
                 load(fpath);
@@ -202,6 +174,7 @@ classdef fLocSession
                   
                 end
             end
+
             % start experiment triggering scanner if applicable
             if session.trigger == 0
                 Screen('FillRect', window_ptr, bcol);
@@ -253,13 +226,14 @@ classdef fLocSession
                     stim_name = stim_names{ii};
                  
                     moviePath = fullfile(session.exp_dir, 'stimuli', 'Processed_Videos', stim_name);
-   
-                    try
-                        moviePtr = Screen('OpenMovie', window_ptr, moviePath);
+                    video_durs_table = session.sequence.all_video_lengths;
+                    video_duration = video_durs_table.Duration_Secs(video_durs_table.Filename==stim_name);
+%                     try
+                         moviePtr = Screen('OpenMovie', window_ptr, moviePath);
                          Screen('PlayMovie', moviePtr, 1);
                          movieStart = GetSecs;
-                         while GetSecs - movieStart < stim_dur
-                             tex = Screen('GetMovieImage', window_ptr, moviePtr);
+                         while GetSecs - movieStart < (video_duration + session.sequence.video_isis(ii, run_num)) 
+                              tex = Screen('GetMovieImage', window_ptr, moviePtr);
                               if tex <= 0
                                   break;
                               end
@@ -270,25 +244,25 @@ classdef fLocSession
                          end
                          Screen('PlayMovie', moviePtr, 0);
                          Screen('CloseMovie', moviePtr);
-                    catch ME
-                        disp(['Error playing video: ', stim_name]);
-                        disp(getReport(ME));
-                        % Only try to draw if window_ptr is still open
-                        %open_windows = Screen('Windows');
-                        if is_valid_window(window_ptr)
-                            try
-                                Screen('FillRect', window_ptr, session.blank_color);
-                                draw_fixation(window_ptr, center, session.fix_color);
-                                Screen('Flip', window_ptr);
-                            catch innerME
-                                disp('Could not draw fallback fixation screen.');
-                                disp(getReport(innerME));
-                            end
-                        else
-                            disp('window_ptr is invalid. Skipping fallback screen drawing.');
-                        end
-                        WaitSecs(stim_dur);  % fallback wait regardless
-                    end
+%                     catch ME
+%                         disp(['Error playing video: ', stim_name]);
+%                         disp(getReport(ME));
+%                         % Only try to draw if window_ptr is still open
+%                         %open_windows = Screen('Windows');
+%                         if is_valid_window(window_ptr)
+%                             try
+%                                 Screen('FillRect', window_ptr, session.blank_color);
+%                                 draw_fixation(window_ptr, center, session.fix_color);
+%                                 Screen('Flip', window_ptr);
+%                             catch innerME
+%                                 disp('Could not draw fallback fixation screen.');
+%                                 disp(getReport(innerME));
+%                             end
+%                         else
+%                             disp('window_ptr is invalid. Skipping fallback screen drawing.');
+%                         end
+%                         WaitSecs(stim_dur);  % fallback wait regardless
+%                     end
 
                 else
                     Screen('DrawTexture', window_ptr, img_ptrs(ii), [], stim_rect);
@@ -408,4 +382,3 @@ classdef fLocSession
     end
     
 end
-

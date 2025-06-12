@@ -28,9 +28,7 @@ function videoData = measure_video_length(folderPath)
             videoData.Filename(i) = mp4Files(i).name;
             videoData.Duration_Secs(i) = v.Duration;
 
-            % Print each file duration immediately (optional)
-            %fprintf('File: %s | Duration: %.2f seconds\n', mp4Files(i).name, v.Duration);
-
+           
         catch ME
             % Handle potential errors in file reading
             fprintf('Error reading file: %s\n', mp4Files(i).name);

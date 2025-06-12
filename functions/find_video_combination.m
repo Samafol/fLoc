@@ -3,6 +3,7 @@ function [validCombination, new_isi] = find_video_combination(videoDurations, ta
     %   Detailed explanation goes here
 
     % Add isi seconds to all videos for transitions
+    %videoDurations = videoData.Duration_Secs;
     isivideoDurations = isi + videoDurations;
     new_isi = isi;
     tolerance = 1e-3; % Adjust if needed
