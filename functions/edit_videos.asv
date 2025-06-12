@@ -1,33 +1,27 @@
-function seq = edit_videos(seq, all_video_lengths)
-
+function seq = edit_videos(seq)
 %edit_videos Edit seq so that calculates video sequence and onsets
 %   Edit seq so that calculates video sequence and onsets
-
+    all_video_lengths = seq.all_video_lengths;
+    isi = seq.isi_dur;
     % Detect the video onsets and stimuli to go from 12 to 6
     how_many_stims = size(seq.stim_names,1);
     how_many_videos = length(find(~cellfun(@isempty, strfind(seq.stim_names(:,1), 'Video'))));
     new_how_many_videos = how_many_stims - how_many_videos/2;
-
     new_stim_names = cell([new_how_many_videos, seq.num_runs]);
-    new_stim_onsets = zeros([new_how_many_videos, seq.num_runs]);
-    new_task_probes = zeros([new_how_many_videos, seq.num_runs]);
-    new_stim_duty_cycle = zeros([new_how_many_videos, seq.num_runs]);
-
-    %new_stim_names = cell([new_how_many_videos, seq.num_runs]);
-    %new_stim_onsets = double(zeros([new_how_many_videos, seq.num_runs]));
-    %new_task_probes = double(zeros([new_how_many_videos, seq.num_runs]));
-    %new_stim_duty_cycle = zeros([new_how_many_videos, seq.num_runs]); 
-    %new_stim_duty_cycle = double(zeros([new_how_many_videos, seq.num_runs]));
-
+    new_stim_onsets = double(zeros([new_how_many_videos, seq.num_runs]));
+    new_task_probes = double(zeros([new_how_many_videos, seq.num_runs]));
+    isi = seq.isi_dur;
+    new_videos_isis = isi * double(ones([new_how_many_videos, seq.num_runs]));
     for rr=1:seq.num_runs
         stim_names = seq.stim_names(:,rr);
         stim_onsets = seq.stim_onsets(:,rr);
         task_probes = seq.task_probes(:,rr);
+        old_videos_isis = isi * double(ones(size(seq.task_probes(:,rr))));
         video_ind = find(~cellfun(@isempty, strfind(stim_names, 'Video')));
         % Check if it is divisible by 12, otherwise send error
-        %if ~mod(length(video_ind),12) == 0
-            %error('Check video names, it is not divisible by 12')
-        %end
+        if ~mod(length(video_ind),12) == 0
+            error('Check video names, it is not divisible by 12')
+        end
         % Per every block, count video length and select 6 that add up to 6 sec
         all_video_ind_to_remove = [];
         all_video_ind_to_keep = [];
@@ -47,7 +41,6 @@ function seq = edit_videos(seq, all_video_lengths)
             end
             targetTotal = 6; %secs
             nSelect = 6; %how many videos
-            isi = seq.isi_dur;
             % Check that the first six videos and their isi-s are below
             % the target total or not
             fill_strategy = 'more_isi'; % options: 'more_videos', 'more_isi'
@@ -61,56 +54,45 @@ function seq = edit_videos(seq, all_video_lengths)
             all_video_ind_to_keep = [all_video_ind_to_keep; block_vids(videos)];
             all_video_length_to_keep = [all_video_length_to_keep; all_times(videos)];
             new_isis = [new_isis; new_isi*ones(size(all_times(videos)))];
+            old_videos_isis(block_vids(videos)) = new_isi*ones(size(all_times(videos)));
         end
         % Change elements per block
         stim_names(all_video_ind_to_remove) = [];
         task_probes(all_video_ind_to_remove) = [];
+        old_videos_isis(all_video_ind_to_remove) = [];
         % Removing is not enought, now update with video length
         stim_onsets(all_video_ind_to_keep+1) = stim_onsets(all_video_ind_to_keep) + all_video_length_to_keep + new_isis;
         % Now remove the one without update
         stim_onsets(all_video_ind_to_remove) = [];
-
-        % Now assign stim duty cycle
-        stim_duty_cycle = zeros(length(stim_names), 1);
+        % Set per-stimulus durations: 0.5s for images, actual duration for videos
+        stim_durations = 0.5 * ones(size(stim_names));  % default for all
         for i = 1:length(stim_names)
-            stim_name = stim_names{i};
-            if endsWith(stim_name, '.mp4', 'IgnoreCase', true)
-                idx = find(strcmp(all_video_lengths.Filename, stim_name), 1);
-                if ~isempty(idx)
-                    stim_duty_cycle(i) = all_video_lengths.Duration_Secs(idx);
-                else
-                    stim_duty_cycle(i) = 1.0; % fallback
+            if contains(stim_names{i}, '.mp4')
+                match_idx = find(matches(all_video_lengths.Filename, stim_names{i}), 1);
+                if ~isempty(match_idx)
+                    stim_durations(i) = all_video_lengths.Duration_Secs(match_idx);
                 end
-            else
-                stim_duty_cycle(i) = 0.5;
             end
         end
 
-
-        % Set stim_duty_cycle (0.5 for images, actual duration for kept videos) ---
-        %stim_duty_cycle = zeros(size(stim_names));
-        %stim_duty_cycle(:) = 0.5;  % Default for images
-        %stim_duty_cycle(all_video_ind_to_keep) = all_video_length_to_keep;
-        %stim_duty_cycle(all_video_ind_to_remove) = [];  % Trim dropped videos
-
-
+        % Store in a matrix for all runs
+        if rr == 1
+            new_stim_duty_cycle = zeros(size(new_stim_onsets));  % initialize on first run
+        end
+        new_stim_duty_cycle(:,rr) = stim_durations;
 
 
         % Add to the seq
-        new_stim_names(1:length(stim_names), rr) = stim_names;
-        new_stim_onsets(1:length(stim_onsets), rr) = stim_onsets;
-        new_task_probes(1:length(task_probes), rr) = task_probes;
-        new_stim_duty_cycle(1:length(stim_duty_cycle), rr) = stim_duty_cycle;
-
-        
-        %new_stim_names(:,rr) = stim_names;
-        %new_stim_onsets(:,rr) = stim_onsets;
-        %new_task_probes(:,rr) = task_probes;
-        %new_stim_duty_cycle(:,rr) = stim_duty_cycle;
+        new_stim_names(:,rr) = stim_names;
+        new_stim_onsets(:,rr) = stim_onsets;
+        new_task_probes(:,rr) = task_probes;
+        new_videos_isis(:,rr) = old_videos_isis;
 
     end
     seq.stim_names = new_stim_names;
     seq.stim_onsets = new_stim_onsets;
     seq.task_probes = new_task_probes;
+    seq.video_isis = new_videos_isis;
     seq.stim_duty_cycle = new_stim_duty_cycle;
+
 end
