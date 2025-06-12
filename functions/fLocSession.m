@@ -105,7 +105,7 @@ classdef fLocSession
             fpath = fullfile(session.exp_dir, 'data', session.id, fname);
             % make stimulus sequences if not already defined for session
             if ~exist(fpath, 'file')
-                seq = fLocSequence(session.stim_set, session.num_runs, session.task_num);
+                seq = fLocSequence(session.stim_set, session.num_runs, session.task_num, session.exp_dir);
                 seq = make_runs(seq);
                 mkdir(fileparts(fpath));
                 % EDIT seq HERE, so that the videos are 6

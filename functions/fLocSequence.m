@@ -7,6 +7,7 @@
         task_probes % index of stimuli that are task probes
         all_video_lengths % lengths of the videos
         video_isis % calculated isi-s for videos so that all sums 6 secs
+        exp_dir 
     end
     
     properties (Hidden)
@@ -52,7 +53,7 @@
     methods
         
         % class constructor
-        function seq = fLocSequence(stim_set, num_runs, task_num)
+        function seq = fLocSequence(stim_set, num_runs, task_num, exp_dir)
             if nargin < 1
                 seq.stim_set = 3;
             else
@@ -67,6 +68,11 @@
                 seq.task_num = 3;
             else
                 seq.task_num = task_num;
+            end
+            if nargin < 4
+                seq.exp_dir = pwd;  % fallback if not passed
+            else
+                seq.exp_dir = exp_dir;
             end
         end
         
@@ -201,7 +207,7 @@
             stim_names = reshape(stim_list', [], seq.num_runs);
             stim_onsets = repmat(0:seq.stim_duty_cycle:seq.run_dur - seq.stim_duty_cycle, seq.num_runs, 1)';
             task_probes = reshape(probe_stim_mat, [], seq.num_runs);
-            flRP = pwd;
+            flRP = seq.exp_dir;
             video_folder = fullfile(flRP, 'stimuli', 'Processed_Videos');
             if ~isfolder(video_folder); error('Video folder cannot be found'); end
             all_video_lengths = measure_video_length(video_folder);

@@ -201,7 +201,9 @@
             stim_names = reshape(stim_list', [], seq.num_runs);
             stim_onsets = repmat(0:seq.stim_duty_cycle:seq.run_dur - seq.stim_duty_cycle, seq.num_runs, 1)';
             task_probes = reshape(probe_stim_mat, [], seq.num_runs);
-            video_folder = fullfile(flRP, 'Stimuli', 'Processed_Videos');
+            flRP = pwd;
+            
+            video_folder = fullfile(flRP, 'stimuli', 'Processed_Videos');
             if ~isfolder(video_folder); error('Video folder cannot be found'); end
             all_video_lengths = measure_video_length(video_folder);
             % store stimulus sequence parameters
