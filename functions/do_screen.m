@@ -82,8 +82,11 @@ function [w, center] = doScreen
 
     % Define rect for second monitor (VGA-1 starts at x=1920)
     second_screen_rect = [1920, 0, total_width, total_height];
+    %screen_rect = Screen('Rect', screen_num); 
 
     % Open a window specifically on the second monitor portion
+    %[w, rect] = Screen('OpenWindow', screen_num, 128, screen_rect)
+
     [w, rect] = Screen('OpenWindow', screen_num, 128, second_screen_rect);
     center = rect(3:4) / 2;
 

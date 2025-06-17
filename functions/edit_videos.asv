@@ -2,7 +2,6 @@ function seq = edit_videos(seq)
 %edit_videos Edit seq so that calculates video sequence and onsets
 %   Edit seq so that calculates video sequence and onsets
     all_video_lengths = seq.all_video_lengths;
-    isi = seq.isi_dur;
     % Detect the video onsets and stimuli to go from 12 to 6
     how_many_stims = size(seq.stim_names,1);
     how_many_videos = length(find(~cellfun(@isempty, strfind(seq.stim_names(:,1), 'Video'))));
@@ -61,27 +60,9 @@ function seq = edit_videos(seq)
         task_probes(all_video_ind_to_remove) = [];
         old_videos_isis(all_video_ind_to_remove) = [];
         % Removing is not enought, now update with video length
-        stim_onsets(all_video_ind_to_keep+1) = stim_onsets(all_video_ind_to_keep) + all_video_length_to_keep + new_isis;
+        %stim_onsets(all_video_ind_to_keep+1) = stim_onsets(all_video_ind_to_keep) + all_video_length_to_keep + new_isis;
         % Now remove the one without update
         stim_onsets(all_video_ind_to_remove) = [];
-        % Set per-stimulus durations: 0.5s for images, actual duration for videos
-        stim_durations = 0.5 * ones(size(stim_names));  % default for all
-        for i = 1:length(stim_names)
-            if contains(stim_names{i}, '.mp4')
-                match_idx = find(matches(all_video_lengths.Filename, stim_names{i}), 1);
-                if ~isempty(match_idx)
-                    stim_durations(i) = all_video_lengths.Duration_Secs(match_idx);
-                end
-            end
-        end
-
-        % Store in a matrix for all runs
-        if rr == 1
-            new_stim_duty_cycle = zeros(size(new_stim_onsets));  % initialize on first run
-        end
-        new_stim_duty_cycle(:,rr) = stim_durations;
-
-
         % Add to the seq
         new_stim_names(:,rr) = stim_names;
         new_stim_onsets(:,rr) = stim_onsets;
@@ -93,6 +74,4 @@ function seq = edit_videos(seq)
     seq.stim_onsets = new_stim_onsets;
     seq.task_probes = new_task_probes;
     seq.video_isis = new_videos_isis;
-    seq.stim_duty_cycle = new_stim_duty_cycle;
-
 end

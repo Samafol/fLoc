@@ -1,4 +1,10 @@
 
+ 
+
+
+
+
+
 function [validCombination, new_isi] = find_video_combination(videoDurations, targetTotal, nSelect, isi, fill_strategy)
     %UNTITLED3 Summary of this function goes here
     %   Detailed explanation goes here
@@ -20,7 +26,7 @@ function [validCombination, new_isi] = find_video_combination(videoDurations, ta
             combs = nchoosek(1:12, nSelect);
             validCombinations = [];
             for i = 1:size(combs, 1)
-                vids = combs(i, :);
+                vids = combs(i, :)
                 currentSum = sum(videoDurations(vids)) + nSelect * isi;
                 if currentSum <= targetTotal + tolerance
                      validCombinations = [validCombinations; vids];
@@ -55,7 +61,7 @@ function [validCombination, new_isi] = find_video_combination(videoDurations, ta
 
 end
 
-%{
+%}
 
 function [validCombination, new_isi] = find_video_combination(videoDurations, targetTotal, nSelect, isi, fill_strategy)
     % This function selects a combination of video indices such that the total
@@ -112,7 +118,6 @@ function [validCombination, new_isi] = find_video_combination(videoDurations, ta
             
     end
 end
-%}
 
 
 

@@ -59,19 +59,22 @@ function seq = edit_videos(seq)
         stim_names(all_video_ind_to_remove) = [];
         task_probes(all_video_ind_to_remove) = [];
         old_videos_isis(all_video_ind_to_remove) = [];
-        % Removing is not enought, now update with video length
+        
+        % Removing is not enough, now update with video length
         stim_onsets(all_video_ind_to_keep+1) = stim_onsets(all_video_ind_to_keep) + all_video_length_to_keep + new_isis;
         % Now remove the one without update
         stim_onsets(all_video_ind_to_remove) = [];
+        
         % Add to the seq
         new_stim_names(:,rr) = stim_names;
         new_stim_onsets(:,rr) = stim_onsets;
         new_task_probes(:,rr) = task_probes;
         new_videos_isis(:,rr) = old_videos_isis;
-
     end
     seq.stim_names = new_stim_names;
     seq.stim_onsets = new_stim_onsets;
     seq.task_probes = new_task_probes;
     seq.video_isis = new_videos_isis;
 end
+
+	

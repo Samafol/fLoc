@@ -266,7 +266,7 @@ classdef fLocSession
 
                 else
 
-                    stim_dur = session.sequence.stim_duty_cycle;  % get correct per-stimulus duration
+                    %stim_dur = session.sequence.stim_duty_cycle;  % get correct per-stimulus duration
                     Screen('DrawTexture', window_ptr, img_ptrs(ii), [], stim_rect);
                     draw_fixation(window_ptr, center, fcol);
                     Screen('Flip', window_ptr);

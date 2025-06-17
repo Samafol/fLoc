@@ -1,3 +1,4 @@
+
 function [bestCombinations, maxSelect] = findMaxStimCombination(isivideoDurations, targetTotal, tolerance)
     maxSelect = 0;
     bestCombinations = [];
