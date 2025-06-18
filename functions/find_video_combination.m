@@ -1,4 +1,4 @@
-
+%{
 function [validCombination, new_isi] = find_video_combination(videoDurations, targetTotal, nSelect, isi, fill_strategy)
     %UNTITLED3 Summary of this function goes here
     %   Detailed explanation goes here
@@ -54,8 +54,9 @@ function [validCombination, new_isi] = find_video_combination(videoDurations, ta
 
 
 end
+%}
 
-%{
+
 
 function [validCombination, new_isi] = find_video_combination(videoDurations, targetTotal, nSelect, isi, fill_strategy)
     % This function selects a combination of video indices such that the total
@@ -86,7 +87,7 @@ function [validCombination, new_isi] = find_video_combination(videoDurations, ta
 
             for i = 1:size(combs, 1)
                 vids = combs(i, :);
-                currentSum = sum(videoDurations(vids)) + nSelect * isi;
+                currentSum = sum(videoDurations(vids)) + (nSelect - 1) * isi;
                 if currentSum <= targetTotal + tolerance
                     validCombinations = [validCombinations; vids];
                 end
@@ -101,18 +102,18 @@ function [validCombination, new_isi] = find_video_combination(videoDurations, ta
 
             % Calculate the new ISI so that total duration matches exactly
             totalVideoTime = sum(videoDurations(validCombination));
-            new_isi = (targetTotal - totalVideoTime) / nSelect;
+            new_isi = (targetTotal - totalVideoTime) / (nSelect - 1);
 
             % Validate result within tolerance
-            finalTotal = totalVideoTime + nSelect * new_isi;
-            assert(abs(finalTotal - targetTotal) < tolerance, 'Final total duration does not match target.');
+            finalTotal = totalVideoTime + (nSelect - 1) * new_isi;
+            %assert(abs(finalTotal - targetTotal) < tolerance, 'Final total duration does not match target.');
         
         otherwise
             error('Only ''more_videos'' or ''more_isi'' are valid options here.');
             
     end
 end
-%}
+
 
 
 

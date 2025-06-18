@@ -105,7 +105,7 @@ classdef fLocSession
             fpath = fullfile(session.exp_dir, 'data', session.id, fname);
             % make stimulus sequences if not already defined for session
             if ~exist(fpath, 'file')
-                seq = fLocSequence(session.stim_set, session.num_runs, session.task_num);
+                seq = fLocSequence(session.stim_set, session.num_runs, session.task_num, session.exp_dir);
                 seq = make_runs(seq);
                 mkdir(fileparts(fpath));
                 % EDIT seq HERE, so that the videos are 6
@@ -232,7 +232,8 @@ classdef fLocSession
                          moviePtr = Screen('OpenMovie', window_ptr, moviePath);
                          Screen('PlayMovie', moviePtr, 1);
                          movieStart = GetSecs;
-                         while GetSecs - movieStart < (video_duration + session.sequence.video_isis(ii, run_num)) 
+                         stim_dur = session.sequence.stim_duty_cycle(ii)
+                         while GetSecs - movieStart < stim_dur %(video_duration + session.sequence.video_isis(ii, run_num)) 
                               tex = Screen('GetMovieImage', window_ptr, moviePtr);
                               if tex <= 0
                                   break;
@@ -266,7 +267,7 @@ classdef fLocSession
 
                 else
 
-                    stim_dur = session.sequence.stim_duty_cycle;  % get correct per-stimulus duration
+                    %stim_dur = session.sequence.stim_duty_cycle;  % get correct per-stimulus duration
                     Screen('DrawTexture', window_ptr, img_ptrs(ii), [], stim_rect);
                     draw_fixation(window_ptr, center, fcol);
                     Screen('Flip', window_ptr);

@@ -232,6 +232,7 @@ classdef fLocSession
                          moviePtr = Screen('OpenMovie', window_ptr, moviePath);
                          Screen('PlayMovie', moviePtr, 1);
                          movieStart = GetSecs;
+                         %stim_dur = session.sequence.stim_duty_cycle(ii);
                          while GetSecs - movieStart < (video_duration + session.sequence.video_isis(ii, run_num)) 
                               tex = Screen('GetMovieImage', window_ptr, moviePtr);
                               if tex <= 0
