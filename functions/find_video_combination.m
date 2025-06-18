@@ -1,71 +1,11 @@
-
-function [validCombination, new_isi] = find_video_combination(videoDurations, targetTotal, nSelect, isi, fill_strategy)
-    % This function selects a combination of video indices such that the total
-    % duration (including ISI between each video) fits within a target total time.
-
-    tolerance = 1e-3;  % Tolerance for floating-point error
-    new_isi = isi;     % Default ISI unless recalculated
-
-    switch fill_strategy
-        case 'more_videos'
-            % Add default ISI to all videos
-            isivideoDurations = videoDurations + isi;
-
-            % Find the best combination that fits the targetTotal
-            [bestCombinations, ~] = findMaxStimCombination(isivideoDurations, targetTotal, tolerance);
-
-            if isempty(bestCombinations)
-                error('No valid combination found with ''more_videos'' strategy.');
-            end
-
-            validCombination = bestCombinations(1,:);
-            return
-
-        case 'more_isi'
-            % Generate all combinations of nSelect videos
-            combs = nchoosek(1:length(videoDurations), nSelect);
-            validCombinations = [];
-
-            for i = 1:size(combs, 1)
-                vids = combs(i, :);
-                currentSum = sum(videoDurations(vids)) + (nSelect - 1) * isi;
-                if currentSum <= targetTotal + tolerance
-                    validCombinations = [validCombinations; vids];
-                end
-            end
-
-            if isempty(validCombinations)
-                error('No valid combinations found within targetTotal.');
-            end
-
-            % Randomly pick one of the valid combinations
-            validCombination = validCombinations(randi(size(validCombinations, 1)), :);
-
-            % Calculate the new ISI so that total duration matches exactly
-            totalVideoTime = sum(videoDurations(validCombination));
-            new_isi = (targetTotal - totalVideoTime) / (nSelect - 1);
-
-            % Validate result within tolerance
-            finalTotal = totalVideoTime + (nSelect - 1) * new_isi;
-            %assert(abs(finalTotal - targetTotal) < tolerance, 'Final total duration does not match target.');
-        
-        otherwise
-            error('Only ''more_videos'' or ''more_isi'' are valid options here.');
-            
-    end
-end
-
-
-%{
 function [validCombination, new_isi] = find_video_combination(videoDurations, targetTotal, nSelect, isi, fill_strategy)
     %UNTITLED3 Summary of this function goes here
     %   Detailed explanation goes here
 
     % Add isi seconds to all videos for transitions
-    %videoDurations = videoData.Duration_Secs;
     isivideoDurations = isi + videoDurations;
     new_isi = isi;
-    tolerance = 1e-3; % Adjust if needed
+    tolerance = 0.1; % Adjust if needed
 
     switch fill_strategy
         case 'more_videos'
@@ -79,17 +19,31 @@ function [validCombination, new_isi] = find_video_combination(videoDurations, ta
             validCombinations = [];
             for i = 1:size(combs, 1)
                 vids = combs(i, :);
-                currentSum = sum(videoDurations(vids)) + nSelect * isi;
+                currentSum = sum(isivideoDurations(combs(i, :)));
                 if currentSum <= targetTotal + tolerance
                      validCombinations = [validCombinations; vids];
-
-                %currentSum = sum(isivideoDurations(combs(i, :)));
-                %if currentSum <= targetTotal %&& ((targetTotal - currentSum) < tolerance)
-                    %validCombinations = [validCombinations; combs(i, :)];
-
                 end
             end
-
+            % Get random index
+            validCombination = validCombinations(randi(size(validCombinations,1)),:);
+            time_random_validComb = sum(isivideoDurations(validCombination));
+            new_isi = isi;
+            if time_random_validComb < targetTotal
+                diff_time = targetTotal - sum(videoDurations(validCombination));
+                new_isi = diff_time / nSelect;
+            end
+        case 'exact_timing'
+            % Generate all combinations
+            combs = nchoosek(1:12, nSelect);
+            validCombinations = [];
+            for i = 1:size(combs, 1)
+                vids = combs(i, :);
+                currentSum = sum(isivideoDurations(combs(i, :)));
+                disp(targetTotal - currentSum)
+                if currentSum <= targetTotal && ((targetTotal - currentSum) < tolerance)
+                     validCombinations = [validCombinations; vids];
+                end
+            end
 
             % Get random index
             validCombination = validCombinations(randi(size(validCombinations,1)),:);
@@ -112,12 +66,3 @@ function [validCombination, new_isi] = find_video_combination(videoDurations, ta
 
 
 end
-%}
-
-
-
-
-
-
-
-
