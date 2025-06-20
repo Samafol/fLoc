@@ -239,44 +239,39 @@ classdef fLocSession
                     match_idx = find(video_durs_table.Filename == stim_name);%, 1);
                     video_duration = video_durs_table.Duration_Secs (match_idx ); %(video_durs_table.Filename==stim_name);
 
-                    %this_isi = session.sequence.video_isis(ii, run_num);
-
-                    %play_duration = 1.0 - this_isi;
-                    %if play_duration <= 0
-                        %warning('Computed play duration ≤ 0 for video %s. Skipping.', stim_name);
-                        %continue;
-                    %end
+                    isi_duration = 0.1;
 
 
                     moviePtr = Screen('OpenMovie', window_ptr, moviePath);
                     Screen('PlayMovie', moviePtr, 1);
+
                     movieStart = GetSecs;
 
-                    %tex = Screen('GetMovieImage', window_ptr, moviePtr);
-                    %while tex > 0 && (GetSecs - movieStart) < play_duration
-                        %Screen('DrawTexture', window_ptr, tex, [], stim_rect);
-                        %draw_fixation(window_ptr, center, fcol);
-                        %Screen('Flip', window_ptr);
-                        %Screen('Close', tex);
-                        %tex = Screen('GetMovieImage', window_ptr, moviePtr);
-                    %end
-
-                    while GetSecs - movieStart < (video_duration + session.sequence.video_isis(ii, run_num))
-
-                        tex = Screen('GetMovieImage', window_ptr, moviePtr);
-                        if tex <= 0
-                            break;
-                        end
+                    tex = Screen('GetMovieImage', window_ptr, moviePtr);
+                    while tex > 0 && (GetSecs - movieStart) < video_duration
                         Screen('DrawTexture', window_ptr, tex, [], stim_rect);
                         draw_fixation(window_ptr, center, fcol);
                         Screen('Flip', window_ptr);
                         Screen('Close', tex);
+                        tex = Screen('GetMovieImage', window_ptr, moviePtr);
                     end
+
+                    %while GetSecs - movieStart < (video_duration + session.sequence.video_isis(ii, run_num))
+
+                        %tex = Screen('GetMovieImage', window_ptr, moviePtr);
+                        %if tex <= 0
+                            %break;
+                        %end
+                        %Screen('DrawTexture', window_ptr, tex, [], stim_rect);
+                        %draw_fixation(window_ptr, center, fcol);
+                        %Screen('Flip', window_ptr);
+                        %Screen('Close', tex);
+                    %end
                     Screen('PlayMovie', moviePtr, 0);
                     Screen('CloseMovie', moviePtr);
-                    %if this_isi > 0
-                        %WaitSecs(this_isi);
-                    %end
+                    if isi_duration > 0
+                        WaitSecs(isi_duration);
+                    end
                 %end
 
 
