@@ -239,7 +239,7 @@ classdef fLocSession
                     match_idx = find(video_durs_table.Filename == stim_name);%, 1);
                     video_duration = video_durs_table.Duration_Secs (match_idx ); %(video_durs_table.Filename==stim_name);
 
-                    isi_duration = 0.1;
+                    isi_duration = 0.16;
 
 
                     moviePtr = Screen('OpenMovie', window_ptr, moviePath);
