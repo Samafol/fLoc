@@ -218,80 +218,59 @@ classdef fLocSession
             for ii = 1:length(stim_names)
                 % display blank screen if baseline and image if stimulus
                 if contains(stim_names{ii}, 'baseline')
-                %if strcmp(stim_names{ii}, 'baseline')
                     Screen('FillRect', window_ptr, bcol);
                     draw_fixation(window_ptr, center, fcol);
                     Screen('Flip', window_ptr);
                     WaitSecs(stim_dur);  % baseline duration is same as image
                     continue;
                 end
-                
                 if img_ptrs(ii) == -1
-                    % This is a video stimulus: play the movie inline
-            
                     stim_name = stim_names{ii};
-                 
-                    moviePath = fullfile(session.exp_dir, 'stimuli', 'Processed_Videos', stim_name);
                     video_durs_table = session.sequence.all_video_lengths;
-                    match_idx = find(video_durs_table.Filename == stim_name);%, 1);
-                    video_duration = video_durs_table.Duration_Secs (match_idx ); %(video_durs_table.Filename==stim_name);
+                    idx = find(video_durs_table.Filename == stim_name);
+                    if ~any(idx)
+                        error('Video not found: %s', stim_name);
+                    end
 
-                    isi_duration = 0.16;
-
+                    video_duration = video_durs_table.Duration_Secs(idx);
+                    moviePath = fullfile(session.exp_dir, 'stimuli', 'Processed_Videos', stim_name);
 
                     moviePtr = Screen('OpenMovie', window_ptr, moviePath);
                     Screen('PlayMovie', moviePtr, 1);
-
                     movieStart = GetSecs;
 
-                    tex = Screen('GetMovieImage', window_ptr, moviePtr);
-                    while tex > 0 && (GetSecs - movieStart) < video_duration
+                    while (GetSecs - movieStart) < video_duration
+                        tex = Screen('GetMovieImage', window_ptr, moviePtr, 1);
+                        if tex <= 0
+                            continue;
+                        end
                         Screen('DrawTexture', window_ptr, tex, [], stim_rect);
                         draw_fixation(window_ptr, center, fcol);
                         Screen('Flip', window_ptr);
                         Screen('Close', tex);
-                        tex = Screen('GetMovieImage', window_ptr, moviePtr);
                     end
 
-                    %while GetSecs - movieStart < (video_duration + session.sequence.video_isis(ii, run_num))
-
-                        %tex = Screen('GetMovieImage', window_ptr, moviePtr);
-                        %if tex <= 0
-                            %break;
-                        %end
-                        %Screen('DrawTexture', window_ptr, tex, [], stim_rect);
-                        %draw_fixation(window_ptr, center, fcol);
-                        %Screen('Flip', window_ptr);
-                        %Screen('Close', tex);
-                    %end
                     Screen('PlayMovie', moviePtr, 0);
                     Screen('CloseMovie', moviePtr);
-                    if isi_duration > 0
-                        WaitSecs(isi_duration);
-                    end
+
+                    % Optional ISI
+                    WaitSecs(session.sequence.video_isis(ii));
                 %end
-
-
                 else
-
-
                     %stim_dur = session.sequence.stim_duty_cycle;  % get correct per-stimulus duration
                     Screen('DrawTexture', window_ptr, img_ptrs(ii), [], stim_rect);
                     draw_fixation(window_ptr, center, fcol);
                     Screen('Flip', window_ptr);
                     WaitSecs(stim_dur);  % <-- ensures image stays visible for its full duration
-                    %Screen('DrawTexture', window_ptr, img_ptrs(ii), [], stim_rect);
-                    %draw_fixation(window_ptr, center, fcol);
-                    %Screen('Flip', window_ptr);
-                end
-           
-                
+                    
+                end            
                 
                 % collect responses
                 ii_press = []; ii_keys = [];
                 [keys, ie] = record_keys(start_time + (ii - 1) * sdc, stim_dur, k);
+
                 ii_keys = [ii_keys keys]; ii_press = [ii_press ie];
-                % display ISI if necessary
+                %display ISI if necessary
                 if isi_dur > 0
                     Screen('FillRect', window_ptr, bcol);
                     draw_fixation(window_ptr, center, fcol);
@@ -299,6 +278,7 @@ classdef fLocSession
                     ii_keys = [ii_keys keys]; ii_press = [ii_press ie];
                     Screen('Flip', window_ptr);
                 end
+
                 resp_keys{ii} = ii_keys;
                 resp_press(ii) = min(ii_press);
             end

@@ -53,7 +53,7 @@
     methods
         
         % class constructor
-        function seq = fLocSequence(stim_set, num_runs, task_num)
+        function seq = fLocSequence(stim_set, num_runs, task_num,exp_dir)
             if nargin < 1
                 seq.stim_set = 3;
             else
