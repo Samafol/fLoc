@@ -36,6 +36,6 @@ function videoData = measure_video_length(folderPath)
         end
     end
      % Print the full table at the end
-    disp('All video durations:');
-    disp(videoData);
+    %disp('All video durations:');
+    %disp(videoData);
 end

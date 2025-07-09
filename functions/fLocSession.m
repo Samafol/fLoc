@@ -159,9 +159,20 @@ classdef fLocSession
                 %if strcmp(stim_names{ii}, 'baseline')
                     img_ptrs(ii) = 0;
                 else
-                    cat_dir = stim_names{ii}(1:find(stim_names{ii} == '-') - 1);
+                     [~, ~, ext] = fileparts(stim_names{ii});
+                    dashIdx = find(stim_names{ii} == '-', 1);
+                    if ~isempty(dashIdx)
+                        cat_dir = stim_names{ii}(1:dashIdx-1);
+                    else
+                        cat_dir = '';
+                        warning('Could not determine category for stimulus: %s', stim_names{ii});
+                    end
                     full_path = fullfile(stim_dir, cat_dir, stim_names{ii});
-                    [~, ~, ext] = fileparts(stim_names{ii});
+
+
+                    %cat_dir = stim_names{ii}(1:find(stim_names{ii} == '-') - 1);
+                    %full_path = fullfile(stim_dir, cat_dir, stim_names{ii});
+                    %[~, ~, ext] = fileparts(stim_names{ii});
                     if ismember(lower(ext), {'.jpg', '.jpeg', '.png', '.bmp', '.tif', '.tiff'})
                          img = imread(full_path);
                          img_ptrs(ii) = Screen('MakeTexture', window_ptr, img);
@@ -233,6 +244,7 @@ classdef fLocSession
                     end
 
                     video_duration = video_durs_table.Duration_Secs(idx);
+
                     moviePath = fullfile(session.exp_dir, 'stimuli', 'Processed_Videos', stim_name);
 
                     moviePtr = Screen('OpenMovie', window_ptr, moviePath);
@@ -245,7 +257,17 @@ classdef fLocSession
                             continue;
                         end
                         Screen('DrawTexture', window_ptr, tex, [], stim_rect);
-                        draw_fixation(window_ptr, center, fcol);
+                        if contains(stim_names{ii}, '_oddball') && contains(stim_names{ii}, '.mp4')
+                            draw_fixation(window_ptr, center, fcol, true); % green dot for oddball video
+                        else
+                            draw_fixation(window_ptr, center, fcol); % red dot/cross for all other stimuli
+                        end
+                        %draw_fixation(window_ptr, center, fcol);
+                        % Debug print
+                        %disp(['stim_names{ii}: ' stim_names{ii} ', isOddball: ' num2str(contains(stim_names{ii}, '_oddball'))]);
+
+                        %draw_fixation(window_ptr, center, fcol, contains(stim_names{ii}, '_oddball'));
+                        
                         Screen('Flip', window_ptr);
                         Screen('Close', tex);
                     end
@@ -255,7 +277,6 @@ classdef fLocSession
 
                     % Optional ISI
                     WaitSecs(session.sequence.video_isis(ii));
-                %end
                 else
                     %stim_dur = session.sequence.stim_duty_cycle;  % get correct per-stimulus duration
                     Screen('DrawTexture', window_ptr, img_ptrs(ii), [], stim_rect);
@@ -296,11 +317,7 @@ classdef fLocSession
             hit_rate = num2str(session.hit_rate(run_num) * 100);
             hit_str = ['Hits: ' hit_cnt '/' num_probes ' (' hit_rate '%)'];
             fa_str = ['False alarms: ' fa_cnt];
-            %Screen('FillRect', window_ptr, bcol);
-            %Screen('Flip', window_ptr);
-            %score_str = [hit_str '\n' fa_str];
-            %DrawFormattedText(window_ptr, score_str, 'center', 'center', tcol);
-            %Screen('Flip', window_ptr);
+            
             % FOR OKAZAKI we will use 4, which is the control box red
             % button
             % For rest of places we can maintain 5 as the generic one
@@ -379,9 +396,6 @@ classdef fLocSession
     end
     
 end
-
-
-
 
 
 
