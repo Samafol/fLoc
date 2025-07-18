@@ -62,6 +62,56 @@ function seq = edit_videos(seq)
             fill_strategy = 'more_isi'; % 'more_videos' or 'more_isi'
             [videos, new_isi] = find_video_combination(all_times, targetTotal, nSelect, isi, fill_strategy);
 
+            % --- guarantee that the oddball video is kept ---
+            oddball_idx_in_block = find(contains(queryStrings, '_oddball'));
+           %{
+            if ~isempty(oddball_idx_in_block)
+                if ~ismember(oddball_idx_in_block, videos)
+                    %Replace the last selected video with the oddball
+                    videos(end) = oddball_idx_in_block;
+                end
+            end
+           %} 
+           
+
+           
+            
+            if ~isempty(oddball_idx_in_block)
+                if ~ismember(oddball_idx_in_block, videos)
+                    % Replace the last selected video with the oddball
+                    videos(end) = oddball_idx_in_block;
+                end
+                % Now make sure oddball is not first or last in the subset
+                % Sort to maintain chronological order
+                videos = sort(videos);
+                oddball_pos = find(videos == oddball_idx_in_block, 1);
+                last_idx_in_block = 12; first_idx_in_block = 1;
+                if oddball_pos == numel(videos)
+                    % Oddball is last kept index
+                    if oddball_idx_in_block < last_idx_in_block
+                        replacement = oddball_idx_in_block + 1;
+                    else
+                        replacement = videos(end-1) - 1; % fallback
+                    end
+                    if ~ismember(replacement, videos) && replacement <= last_idx_in_block
+                        videos(1) = replacement;  % drop earliest video
+                    end
+                elseif oddball_pos == 1
+                    % Oddball is first kept index
+                    if oddball_idx_in_block > first_idx_in_block
+                        replacement = oddball_idx_in_block - 1;
+                    else
+                        replacement = videos(2) + 1; % fallback
+                    end
+                    if ~ismember(replacement, videos) && replacement >= first_idx_in_block
+                        videos(end) = replacement; % drop latest video
+                    end
+                end
+                videos = sort(videos);
+            end
+
+           
+
             videos_to_remove = block_vids(~ismember(1:numel(block_vids), videos));
             all_video_ind_to_remove = [all_video_ind_to_remove; videos_to_remove];
             all_video_ind_to_keep = [all_video_ind_to_keep; block_vids(videos)];
@@ -92,6 +142,23 @@ function seq = edit_videos(seq)
         new_stim_onsets{rr} = stim_onsets;
         new_task_probes{rr} = task_probes;
         new_videos_isis{rr} = old_videos_isis;
+    end
+    % --- equalise column lengths across runs ----
+    max_len = max(cellfun(@numel, new_stim_names));
+    padBaseline = 'baseline';
+    for rr = 1:seq.num_runs
+        pad_n = max_len - numel(new_stim_names{rr});
+        if pad_n > 0
+            % pad stimulus names with additional baseline rows
+            new_stim_names{rr}(end+1:max_len,1) = {padBaseline};
+            % Pad onsets: continue stepping by stim_duty_cycle
+            last_onset = new_stim_onsets{rr}(end);
+            step = seq.stim_duty_cycle;
+            new_stim_onsets{rr}(end+1:max_len,1) = last_onset + step*(1:pad_n)';
+            % Pad probes / ISIs with zeros
+            new_task_probes{rr}(end+1:max_len,1) = 0;
+            new_videos_isis{rr}(end+1:max_len,1) = seq.isi_dur;
+        end
     end
 
     % Concatenate across runs

@@ -1,6 +1,6 @@
 
 classdef fLocSession
-    
+
     properties
         name      % participant initials or id string
         date      % session date
@@ -10,7 +10,7 @@ classdef fLocSession
         responses % behavioral response data structure
         parfiles  % paths to vistasoft-compatible parfiles
     end
-    
+
     properties (Hidden)
         stim_set  % stimulus set/s (1 = standard, 2 = alternate, 3 = both)
         task_num  % task number (1 = 1-back, 2 = 2-back, 3 = oddball)
@@ -19,12 +19,12 @@ classdef fLocSession
         hit_cnt   % number of hits per run
         fa_cnt    % number of false alarms per run
     end
-    
+
     properties (Constant)
         count_down = 12; % pre-experiment countdown (secs)
         stim_size = 768; % size to display images in pixels
     end
-    
+
     properties (Constant, Hidden)
         task_names = {'1back' '2back' 'oddball'};
         exp_dir = fileparts(fileparts(which(mfilename, 'class')));
@@ -33,20 +33,20 @@ classdef fLocSession
         blank_color = 128;     % baseline screen color (grayscale)
         wait_dur = 1;          % seconds to wait for response
     end
-    
+
     properties (Dependent)
         id        % session-specific id string
         task_name % descriptor for each task number
     end
-    
+
     properties (Dependent, Hidden)
         hit_rate     % proportion of task probes detected in each run
         instructions % task-specific instructions for participant
     end
-    
-    
+
+
     methods
-        
+
         % class constructor
         function session = fLocSession(name, trigger, stim_set, num_runs, task_num)
             session.name = deblank(name);
@@ -77,18 +77,18 @@ classdef fLocSession
             exp_str = [session.task_name '_' num2str(session.num_runs) 'runs'];
             id = [par_str '_' exp_str];
         end
-        
+
         % get name of task
         function task_name = get.task_name(session)
             task_name = session.task_names{session.task_num};
         end
-        
+
         % get hit rate for task
         function hit_rate = get.hit_rate(session)
             num_probes = sum(session.sequence.task_probes);
             hit_rate = session.hit_cnt ./ num_probes;
         end
-        
+
         % get instructions for participant given task
         function instructions = get.instructions(session)
             if session.task_num == 1
@@ -96,10 +96,10 @@ classdef fLocSession
             elseif session.task_num == 2
                 instructions = 'Fixate. Press a button when an image repeats with one intervening image.';
             else
-                instructions = 'Fixate. Press a button when a scrambled image appears.';
+                instructions = 'Fixate. Press a button when when an oddball (green cross) image or video appears.';
             end
         end
-        
+
         % define/load stimulus sequences for this session
         function session = load_seqs(session)
             fname = [session.id '_fLocSequence.mat'];
@@ -118,7 +118,7 @@ classdef fLocSession
             end
             session.sequence = seq;
         end
-        
+
         % register input devices
         function session = find_inputs(session)
             laptop_key = get_keyboard_num;
@@ -131,12 +131,12 @@ classdef fLocSession
                 % session.input = laptop_key;
                 % Okazaki: from the same usb the response box and the
                 % keyboard is coming, being 5 de trigger of scanner and
-                % 1,2,3,4 the button numbers. Make the input 5                
+                % 1,2,3,4 the button numbers. Make the input 5
                 session.keyboard = button_key; %laptop_key; % button_key % ;
                 session.input = button_key;  %laptop_key; %button_key;
             end
         end
-        
+
         % execute a run of the experiment
         function session = run_exp(session, run_num)
             % get timing information and initialize response containers
@@ -156,10 +156,10 @@ classdef fLocSession
             img_ptrs = [];
             for ii = 1:length(stim_names)
                 if contains(stim_names{ii}, 'baseline')
-                %if strcmp(stim_names{ii}, 'baseline')
+                    %if strcmp(stim_names{ii}, 'baseline')
                     img_ptrs(ii) = 0;
                 else
-                     [~, ~, ext] = fileparts(stim_names{ii});
+                    [~, ~, ext] = fileparts(stim_names{ii});
                     dashIdx = find(stim_names{ii} == '-', 1);
                     if ~isempty(dashIdx)
                         cat_dir = stim_names{ii}(1:dashIdx-1);
@@ -174,16 +174,22 @@ classdef fLocSession
                     %full_path = fullfile(stim_dir, cat_dir, stim_names{ii});
                     %[~, ~, ext] = fileparts(stim_names{ii});
                     if ismember(lower(ext), {'.jpg', '.jpeg', '.png', '.bmp', '.tif', '.tiff'})
-                         img = imread(full_path);
-                         img_ptrs(ii) = Screen('MakeTexture', window_ptr, img);
+                        img_name = stim_names{ii};
+                        if contains(img_name, '_oddball') && strcmpi(lower(ext), '.jpg')
+                            img_name = strrep(img_name, '_oddball', '');
+                        end
+                        full_path = fullfile(stim_dir, cat_dir, img_name);
+
+                        img = imread(full_path);
+                        img_ptrs(ii) = Screen('MakeTexture', window_ptr, img);
                     elseif strcmpi(ext, '.mp4')
                         % Skip loading here — handle videos later after all images are shown
-                         img_ptrs(ii) = -1;  % Flag as video
+                        img_ptrs(ii) = -1;  % Flag as video
                     else
                         warning('Unsupported stimulus type: %s', stim_names{ii});
                         img_ptrs(ii) = 0;
-                    end     
-                  
+                    end
+
                 end
             end
 
@@ -222,7 +228,7 @@ classdef fLocSession
                 end
                 rem_time = cnt_time - GetSecs;
             end
-            
+
 
             % main display loop
             start_time = GetSecs;
@@ -237,15 +243,35 @@ classdef fLocSession
                 end
                 if img_ptrs(ii) == -1
                     stim_name = stim_names{ii};
+                    % If this is an oddball video, strip '_oddball' before the file extension for loading
+                    if contains(stim_name, '_oddball')
+                        [base, ext] = strtok(stim_name, '.');
+                        stim_name_for_loading = [erase(base, '_oddball') ext];
+                    else
+                        stim_name_for_loading = stim_name;
+                    end
                     video_durs_table = session.sequence.all_video_lengths;
-                    idx = find(video_durs_table.Filename == stim_name);
+                    idx = find(video_durs_table.Filename == stim_name_for_loading);
                     if ~any(idx)
-                        error('Video not found: %s', stim_name);
+                        error('Video not found: %s', stim_name_for_loading);
                     end
 
+                    %new logic to accommadate for 2 different video folders
                     video_duration = video_durs_table.Duration_Secs(idx);
 
-                    moviePath = fullfile(session.exp_dir, 'stimuli', 'Processed_Videos', stim_name);
+                    % Determine the parent video folder from the filename prefix before the first dash
+                    dash_idx = strfind(stim_name_for_loading, '-');
+                    if isempty(dash_idx)
+                        error('Unexpected video filename format: %s', stim_name_for_loading);
+                    end
+                    video_cat_folder = stim_name_for_loading(1:dash_idx(1)-1);  % e.g., 'Processed_Videos' or 'Scrambled_Processed_Videos'
+
+                    moviePath = fullfile(session.exp_dir, 'stimuli', video_cat_folder, stim_name_for_loading);
+
+                    %previous logic that uses only one video folder
+                    %video_duration = video_durs_table.Duration_Secs(idx);
+
+                    %moviePath = fullfile(session.exp_dir, 'stimuli', 'Processed_Videos', stim_name_for_loading);
 
                     moviePtr = Screen('OpenMovie', window_ptr, moviePath);
                     Screen('PlayMovie', moviePtr, 1);
@@ -257,17 +283,9 @@ classdef fLocSession
                             continue;
                         end
                         Screen('DrawTexture', window_ptr, tex, [], stim_rect);
-                        if contains(stim_names{ii}, '_oddball') && contains(stim_names{ii}, '.mp4')
-                            draw_fixation(window_ptr, center, fcol, true); % green dot for oddball video
-                        else
-                            draw_fixation(window_ptr, center, fcol); % red dot/cross for all other stimuli
-                        end
-                        %draw_fixation(window_ptr, center, fcol);
-                        % Debug print
-                        %disp(['stim_names{ii}: ' stim_names{ii} ', isOddball: ' num2str(contains(stim_names{ii}, '_oddball'))]);
-
-                        %draw_fixation(window_ptr, center, fcol, contains(stim_names{ii}, '_oddball'));
-                        
+                        [~, ~, ext] = fileparts(stim_names{ii});
+                        isOddballVideo = contains(stim_names{ii}, '_oddball') && strcmpi(lower(ext), '.mp4');
+                        draw_fixation(window_ptr, center, fcol, isOddballVideo);
                         Screen('Flip', window_ptr);
                         Screen('Close', tex);
                     end
@@ -277,15 +295,29 @@ classdef fLocSession
 
                     % Optional ISI
                     WaitSecs(session.sequence.video_isis(ii));
+                    %end
                 else
+                    %{
                     %stim_dur = session.sequence.stim_duty_cycle;  % get correct per-stimulus duration
                     Screen('DrawTexture', window_ptr, img_ptrs(ii), [], stim_rect);
                     draw_fixation(window_ptr, center, fcol);
+                    %isOddballImage = contains(stim_names{ii}, '_oddball');
+                    %draw_fixation(window_ptr, center, fcol, isOddballImage);
                     Screen('Flip', window_ptr);
+                    %}
+
+                    Screen('DrawTexture', window_ptr, img_ptrs(ii), [], stim_rect);
+                    [~, ~, ext] = fileparts(stim_names{ii});
+                    isOddballImage = contains(stim_names{ii}, '_oddball') && strcmpi(lower(ext), '.jpg');
+                    draw_fixation(window_ptr, center, fcol, isOddballImage);
+                    Screen('Flip', window_ptr);
+
+
+
                     WaitSecs(stim_dur);  % <-- ensures image stays visible for its full duration
-                    
-                end            
-                
+
+                end
+
                 % collect responses
                 ii_press = []; ii_keys = [];
                 [keys, ie] = record_keys(start_time + (ii - 1) * sdc, stim_dur, k);
@@ -317,7 +349,11 @@ classdef fLocSession
             hit_rate = num2str(session.hit_rate(run_num) * 100);
             hit_str = ['Hits: ' hit_cnt '/' num_probes ' (' hit_rate '%)'];
             fa_str = ['False alarms: ' fa_cnt];
-            
+            %Screen('FillRect', window_ptr, bcol);
+            %Screen('Flip', window_ptr);
+            %score_str = [hit_str '\n' fa_str];
+            %DrawFormattedText(window_ptr, score_str, 'center', 'center', tcol);
+            %Screen('Flip', window_ptr);
             % FOR OKAZAKI we will use 4, which is the control box red
             % button
             % For rest of places we can maintain 5 as the generic one
@@ -327,11 +363,11 @@ classdef fLocSession
             % Close textures after all images are shown
             %Screen('Close'); % Close screen but keep window
             for i = 1:length(img_ptrs)
-                 if img_ptrs(i) > 0
-                      Screen('Close', img_ptrs(i));
-                 end 
+                if img_ptrs(i) > 0
+                    Screen('Close', img_ptrs(i));
+                end
             end
-            
+
             % Now display final performance screen
             Screen('FillRect', window_ptr, bcol);
             Screen('Flip', window_ptr);
@@ -342,7 +378,7 @@ classdef fLocSession
             ShowCursor;
             Screen('CloseAll');
         end
-        
+
         % quantify performance in stimulus task
         function session = score_task(session, run_num)
             sdc = session.sequence.stim_duty_cycle;
@@ -361,7 +397,7 @@ classdef fLocSession
             session.hit_cnt(run_num) = sum(max(reshape(hit_resp_windows, fpw, [])));
             session.fa_cnt(run_num) = sum(fa_resp_windows);
         end
-        
+
         % write vistasoft-compatible parfile for each run
         function session = write_parfiles(session)
             session.parfiles = cell(1, session.num_runs);
@@ -369,15 +405,15 @@ classdef fLocSession
             conds = ['Baseline' session.sequence.stim_conds];
             cols = {[1 1 1] [0 0 1] [0 0 0] [1 0 0] [.8 .8 0] [0 1 0] [0.5 0.5 0.5]};
             % write information about each block on a separate line
-            
-    
+
+
             for rr = 1:session.num_runs
                 block_onsets = session.sequence.block_onsets(:, rr);
                 block_conds = session.sequence.block_conds(:, rr);
                 if max(block_conds + 1) > length(cols)
                     error('block_conds index exceeds number of defined condition colors.');
                 end
-                
+
                 cond_names = conds(block_conds + 1);
                 cond_cols = cols(block_conds + 1);
                 fname = [session.id '_fLoc_run' num2str(rr) '.par'];
@@ -392,10 +428,26 @@ classdef fLocSession
                 session.parfiles{rr} = fpath;
             end
         end
-        
+
     end
-    
+
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
