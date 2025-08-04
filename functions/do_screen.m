@@ -1,3 +1,40 @@
+
+% use this function for the stimuli display on VGA screen at the MRI
+% room
+
+function [w, center] = doScreen
+    % Avoid sync test failure during development
+    Screen('Preference', 'SkipSyncTests', 1);
+    Screen('Preference', 'VisualDebugLevel', 0);
+
+    %Choose the correct screen index: VGA-1 = screen 1
+    screen_num = 0;  % Use 0 instead of max(Screen('Screens'))
+
+    % Get full screen dimensions
+    %screen_rect = Screen('Rect', screen_num);
+
+    % Define rect for VGA-1 (which starts at x = 1920)
+    second_screen_rect = [1920, 0, 2944, 768];  % 1080 VGA screen size is 1024x768
+
+    % Open the window on the selected screen using its full rect
+    [w, rect] = Screen('OpenWindow', screen_num, 128, second_screen_rect);
+
+    % Get center coordinates of the screen
+    center = rect(3:4) / 2;
+
+    % Set text properties and blending
+    Screen('TextFont', w, 'Times');
+    Screen('TextSize', w, 24);
+    Screen('BlendFunction', w, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
+
+    % Hide the mouse cursor
+    HideCursor;
+end
+
+
+
+
+
 %{
 function [w, center] = doScreen
 % Opens a full-screen window, sets text properties, and hides the cursor.
@@ -69,9 +106,11 @@ end
 
 
 
+
+
 %Use the function below to display the stimuli upstairs
 
-
+%{
 function [w, center] = doScreen
     % Avoid sync test failure during development
     Screen('Preference', 'SkipSyncTests', 1);
@@ -99,47 +138,13 @@ function [w, center] = doScreen
     % Hide mouse
     HideCursor;
 end
-
-
-
-
-
-
-% use the function below for the stimuli display on VGA screen at the MRI
-% room
-
-%{
-
-function [w, center] = doScreen
-    % Avoid sync test failure during development
-    Screen('Preference', 'SkipSyncTests', 1);
-    Screen('Preference', 'VisualDebugLevel', 0);
-
-    %Choose the correct screen index: VGA-1 = screen 1
-    screen_num = 0;  % Use 0 instead of max(Screen('Screens'))
-
-    % Get full screen dimensions
-    %screen_rect = Screen('Rect', screen_num);
-
-    % Define rect for VGA-1 (which starts at x = 1920)
-    second_screen_rect = [1920, 0, 2944, 768];  % 1080 VGA screen size is 1024x768
-
-    % Open the window on the selected screen using its full rect
-    [w, rect] = Screen('OpenWindow', screen_num, 128, second_screen_rect);
-
-    % Get center coordinates of the screen
-    center = rect(3:4) / 2;
-
-    % Set text properties and blending
-    Screen('TextFont', w, 'Times');
-    Screen('TextSize', w, 24);
-    Screen('BlendFunction', w, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
-
-    % Hide the mouse cursor
-    HideCursor;
-end
-
 %}
+
+
+
+
+
+
 
 
 

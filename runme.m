@@ -1,3 +1,5 @@
+
+
 function runme(name, trigger, stim_set, num_runs, task_num, start_run)
 %{ 
 Prompts experimenter for session parameters and executes functional
@@ -232,5 +234,15 @@ for rr = start_run:num_runs
     save(fpath, 'session', '-v7.3');
 end
 write_parfiles(session);
+write_event_tsv(session);
 
 end
+
+
+
+
+
+
+
+
+

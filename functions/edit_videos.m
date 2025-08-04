@@ -8,9 +8,6 @@ function seq = edit_videos(seq)
     how_many_videos = length(find(~cellfun(@isempty, strfind(seq.stim_names(:,1), 'Video'))));
     new_how_many_videos = round(how_many_stims - how_many_videos / 2); 
 
-    %disp(['new_how_many_videos = ', num2str(new_how_many_videos)]);
-    %disp(['seq.num_runs = ', num2str(seq.num_runs)]);
-
     % Preallocate per-run cell containers
     new_stim_names = cell(1, seq.num_runs);
     new_stim_onsets = cell(1, seq.num_runs);
@@ -67,51 +64,10 @@ function seq = edit_videos(seq)
            
             if ~isempty(oddball_idx_in_block)
                 if ~ismember(oddball_idx_in_block, videos)
-                    %Replace the last selected video with the oddball
+                    
                     videos(end) = oddball_idx_in_block;
                 end
             end
-            
-           
-
-           
-            %{
-            if ~isempty(oddball_idx_in_block)
-                if ~ismember(oddball_idx_in_block, videos)
-                    % Replace the last selected video with the oddball
-                    videos(end) = oddball_idx_in_block;
-                end
-                % Now make sure oddball is not first or last in the subset
-                % Sort to maintain chronological order
-                videos = sort(videos);
-                oddball_pos = find(videos == oddball_idx_in_block, 1);
-                last_idx_in_block = 12; first_idx_in_block = 1;
-                if oddball_pos == numel(videos)
-                    % Oddball is last kept index
-                    if oddball_idx_in_block < last_idx_in_block
-                        replacement = oddball_idx_in_block + 1;
-                    else
-                        replacement = videos(end-1) - 1; % fallback
-                    end
-                    if ~ismember(replacement, videos) && replacement <= last_idx_in_block
-                        videos(1) = replacement;  % drop earliest video
-                    end
-                elseif oddball_pos == 1
-                    % Oddball is first kept index
-                    if oddball_idx_in_block > first_idx_in_block
-                        replacement = oddball_idx_in_block - 1;
-                    else
-                        replacement = videos(2) + 1; % fallback
-                    end
-                    if ~ismember(replacement, videos) && replacement >= first_idx_in_block
-                        videos(end) = replacement; % drop latest video
-                    end
-                end
-                videos = sort(videos);
-            end
-            %}
-
-           
 
             videos_to_remove = block_vids(~ismember(1:numel(block_vids), videos));
             all_video_ind_to_remove = [all_video_ind_to_remove; videos_to_remove];

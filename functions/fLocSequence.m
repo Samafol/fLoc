@@ -22,7 +22,6 @@ classdef fLocSequence
         stim_conds = {'English' 'Chinese' 'Images' 'Videos'};
         stim_per_block = 12;   % stimuli per block
         stim_duty_cycle = 0.5; % duration of stimulus duty cycle (s)
-        %stim_conds = {'Bodies' 'RealWords' 'Faces' 'Lexical' 'Perceptual' 'Videos'};
     end
 
     properties (Constant, Hidden)
@@ -123,7 +122,7 @@ classdef fLocSequence
                 case 3
                     % Combine both sets
                     combined_set = [seq.stim_set1, seq.stim_set2];
-                    num_categories = numel(seq.stim_set1); % or seq.stim_set2, they should be equal
+                    num_categories = numel(seq.stim_set1); 
                     run_sets = cell(seq.num_runs, num_categories);
                     for r = 1:seq.num_runs
                         idx = randperm(numel(combined_set), num_categories);
@@ -132,17 +131,7 @@ classdef fLocSequence
                 otherwise
                     error('Invalid stim_set argument.');
             end
-            % Ensure Processed_Videos is present in every run for ALL stim_set cases
-
-
-            %for r = 1:size(run_sets,1)
-                %if ~any(strcmp(run_sets(r,:), 'Processed_Videos'))
-                    %replace_idx = randi(size(run_sets,2));
-                    %run_sets(r, replace_idx) = {'Processed_Videos'};
-                %end
-            %end
-        %end
-     
+            
         % Ensure at least one video category is present in every run
         video_cats = {'Processed_Videos', 'Scrambled_Processed_Videos'};
         for r = 1:size(run_sets,1)
@@ -194,7 +183,7 @@ classdef fLocSequence
                     stim_nums = randperm(seq.stim_per_set, n_cat);
                 else
                     stim_nums = [randperm(seq.stim_per_set), randsample(seq.stim_per_set, n_cat - seq.stim_per_set, true)'];
-                    %stim_nums = [randperm(seq.stim_per_set), randsample(seq.stim_per_set, n_cat - seq.stim_per_set, true)];
+                    
                 end
                 stim_num_list(cat_idxs) = num2cell(stim_nums(:));
             end
@@ -265,9 +254,7 @@ classdef fLocSequence
                         % Mark the oddball image with _oddball before the extension
                         [base, ext] = strtok(stim_list{rand_idx}, '.');
                         probe_stim_names{j} = [base '_oddball' ext];
-                    %end
-                        % For image blocks, use a scrambled image as oddball
-                        %probe_stim_names{j} = ['scrambled-' num2str(randi(seq.stim_per_set)) '.jpg'];
+                    
                     end
                 end
                 
@@ -294,7 +281,7 @@ classdef fLocSequence
                     error('Video folder cannot be found: %s', folder_path);
                 end
                 tmp_tbl = measure_video_length(folder_path);
-                all_video_lengths = [all_video_lengths; tmp_tbl]; %#ok<AGROW>
+                all_video_lengths = [all_video_lengths; tmp_tbl]; 
             end
 
             % Robust check for at least 12 videos in total
@@ -302,17 +289,6 @@ classdef fLocSequence
                 warning('There are only %d videos across the specified folders. At least 12 are required for a complete video block. Experiment will halt.', height(all_video_lengths));
                 error('Not enough videos in specified video folders.');
             end
-
-
-            %flRP = seq.exp_dir;
-            %video_folder = fullfile(flRP, 'stimuli', 'Processed_Videos');
-            %if ~isfolder(video_folder); error('Video folder cannot be found'); end
-            %all_video_lengths = measure_video_length(video_folder);
-            % Robust check for at least 12 videos
-            %if height(all_video_lengths) < 12
-                %warning('There are only %d videos in Processed_Videos. At least 12 are required for a complete video block. Experiment will halt.', height(all_video_lengths));
-                %error('Not enough videos in Processed_Videos folder.');
-            %end
 
             % store stimulus sequence parameters
             seq.block_onsets = block_onsets;
@@ -327,6 +303,61 @@ classdef fLocSequence
     end
 
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+
+
+
+
+
 
 
  
